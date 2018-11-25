@@ -1,0 +1,100 @@
+version: '2.2'
+services:
+  syncthing:
+    image: linuxserver/syncthing:144
+    restart: unless-stopped
+    ports:
+     - 22000:22000 #
+     - 21027:21027/udp #
+    expose:
+     - 8384
+    volumes:
+     - syncthing_config:/config
+     - syncthing_books:/mnt/books
+     - syncthing_scratch:/mnt/scratch
+     - syncthing_music:/mnt/music
+     - syncthing_video:/mnt/video
+     - syncthing_camelot:/mnt/camelot
+     - syncthing_pictures:/mnt/pictures
+     - syncthing_data:/mnt/data
+     - syncthing_home:/mnt/home
+    environment:
+     - PGID=1001
+     - PUID=0
+     - UMASK_SET=002
+     - VIRTUAL_PORT=8384
+     - TZ=${MY_TZ:-SUBFAIL}
+     - VIRTUAL_HOST=syncthing.${DNS_SUFFIX:-local}
+     - LETSENCRYPT_HOST=syncthing.${DNS_SUFFIX:-local}
+     - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+#    cpu_percent: 30 #limit cpu usage percentage
+#    cpus: 1.0 #limit to x cpu
+    labels:
+      container_group: sync
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+networks:
+  reverse-proxy:
+    external: true
+
+volumes:
+  syncthing_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/syncthing"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_music:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/music"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_video:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_books:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_scratch:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_camelot:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/camelot"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_pictures:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/pictures"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_home:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/home"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

@@ -1,0 +1,38 @@
+version: '3' # version of docker-compose to use
+services:
+  phlex:
+    image: digitalhigh/phlex
+    privileged: true
+    restart: always
+    expose:
+      - 5666
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - VIRTUAL_PORT=5666
+      - VIRTUAL_HOST=phlex.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=phlex.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    volumes:
+      - phlex_config:/config
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+volumes:
+  phlex_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/phlex"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy

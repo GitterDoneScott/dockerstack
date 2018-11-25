@@ -1,0 +1,43 @@
+version: "3"
+
+services:
+  calibre-web:
+    image: linuxserver/calibre-web
+    restart: always
+    expose:
+      - "8083"
+    volumes:
+      - calibre-web:/config
+      - calibre_library:/books:nocopy
+    environment:
+      - "VIRTUAL_HOST=library.${DNS_SUFFIX:-local}"
+      - "LETSENCRYPT_HOST=library.${DNS_SUFFIX:-local}"
+      - "LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}"
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: calibre
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+networks:
+  reverse-proxy:
+    external: true
+
+volumes:
+  calibre-web:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/calibre-web"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  calibre_library:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Calibre\ Portable/Calibre\ Library"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

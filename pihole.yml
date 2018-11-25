@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  pihole:
+    image: diginc/pi-hole:latest
+    restart: always
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+    expose:
+      - "80"
+    volumes:
+      - pihole-config:/etc/pihole
+      - pihole-dnsmasq:/etc/dnsmasq.d
+    environment:
+      - ServerIP=192.168.0.11
+      - HTTPS_METHOD=noredirect
+      - VIRTUAL_HOST=pihole.${DNS_SUFFIX:-local}
+      - LETSENCTYPT_HOST=pihole.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: dns
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+networks:
+  reverse-proxy:
+    external: true
+
+volumes:
+  pihole-config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/pihole/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  pihole-dnsmasq:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/pihole/dnsmasq.d"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

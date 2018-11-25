@@ -1,0 +1,34 @@
+version: '3'
+services:
+  tautulli:
+    image: "tautulli/tautulli"
+    restart: always
+    expose:
+     - "8181"
+    volumes:
+     - tautulli_config:/config
+    environment:
+     - VIRTUAL_HOST=tautulli.${DNS_SUFFIX:-local}
+     - LETSENCRYPT_HOST=tautulli.${DNS_SUFFIX:-local}
+     - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: monitoring
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+networks:
+  reverse-proxy:
+    external: true
+
+volumes:
+  tautulli_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/tautulli"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
