@@ -1,0 +1,104 @@
+version: "3"
+services:
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - influxdb
+    restart: always
+    expose:
+      - "3000"
+    volumes:
+      - grafana_config:/etc/grafana
+      - grafana_storage:/var/lib/grafana
+    networks:
+      - reverse-proxy
+      - back
+    environment:
+      - VIRTUAL_HOST=dashboard.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=dashboard.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    user: "104"
+    labels:
+      container_group: monitoring
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+  influxdb:
+    image: influxdb
+    restart: always
+    command: -config /etc/influxdb/influxdb.conf
+    ports:
+      - "8086:8086/tcp"
+      - "2003:2003/tcp"
+      - "8083:8083/tcp"
+    volumes:
+      - influxdb_conf:/etc/influxdb
+      - influxdb:/var/lib/influxdb
+    networks:
+      - back
+    environment:
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_GRAPHITE_ENABLED=true
+    labels:
+      container_group: monitoring
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+#  cadvisor:
+#    image: google/cadvisor
+#    restart: always
+#    command: -storage_driver=influxdb -storage_driver_db=cadvisor -storage_driver_host=192.168.0.11:8086
+#    depends_on:
+#      - influxdb
+#    ports:
+#      - "8089:8080"
+#    volumes:
+#      - /:/rootfs:ro
+#      - /var/run:/var/run:rw
+#      - /sys:/sys:ro
+#      - /var/lib/docker/:/var/lib/docker:ro
+#    networks:
+#      - back
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  back:
+    driver: bridge
+
+volumes:
+  grafana_storage:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grafana/storage"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  grafana_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grafana/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  influxdb:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/influxdb/db"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  influxdb_conf:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/influxdb/conf"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
