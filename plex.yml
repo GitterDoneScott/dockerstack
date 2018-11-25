@@ -1,0 +1,78 @@
+version: '2.2'
+services:
+  plex:
+    image: plexinc/pms-docker:plexpass
+    restart: unless-stopped
+    ports:
+#     - 32400:32400 #plex web
+     - 33400:33400 #insecure web tools
+    expose:
+     - 32400
+    volumes:
+     - plex_config:/config
+     - plex_transcode:/transcode
+     - audiobooks:/mnt/audiobooks
+     - scratch:/mnt/scratch
+     - music:/mnt/music
+     - video:/mnt/video
+    environment:
+     - PLEX_MEDIA_SERVER_USE_SYSLOG=true
+     - VIRTUAL_PORT=32400
+#     - PLEX_CLAIM= #valid for 5 minutes
+     - TZ=${MY_TZ:-SUBFAIL}
+     - VIRTUAL_HOST=plex.${DNS_SUFFIX:-local}
+     - LETSENCRYPT_HOST=plex.${DNS_SUFFIX:-local}
+     - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+#    cpu_percent: 30 #limit cpu usage percentage
+#    cpus: 1.0 #limit to x cpu
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+networks:
+  reverse-proxy:
+    external: true
+
+volumes:
+  plex_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/plex/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  plex_transcode:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/plex/transcode"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  scratch:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  music:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/music"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  video:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  audiobooks:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Audio books"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

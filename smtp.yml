@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+  smtp:
+    image: namshi/smtp
+    restart: always
+    environment:
+      - GMAIL_USER=${SMTP_GMAIL_USER:-SUBFAIL}
+      - GMAIL_PASSWORD=${SMTP_GMAIL_PASSWORD:-SUBFAIL}
+      - RELAY_NETWORKS=${SMTP_RELAY_NETWORKS:-SUBFAIL}
+    networks:
+      - smtp
+    labels:
+      container_group: smtp
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+networks:
+  smtp:
+    driver: bridge

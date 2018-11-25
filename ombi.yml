@@ -1,0 +1,282 @@
+version: '2.2'
+services:
+  ombi:
+    image: "linuxserver/ombi"
+    restart: unless-stopped
+    expose:
+     - "3579"
+    volumes:
+     - ombi_config:/config
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - VIRTUAL_HOST=request.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=request.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+ 
+
+  radarr:
+    image: "linuxserver/radarr"
+    restart: unless-stopped
+    expose:
+     - "7878"
+    volumes:
+     - radarr_config:/config
+     - radarr_downloads:/data/complete/radarr
+     - radarr_movies:/movies
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=radarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=radarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+
+  jackett:
+    image: "linuxserver/jackett"
+    restart: unless-stopped
+    expose:
+     - "9117"
+    volumes:
+     - jackett_config:/config
+     - jackett_downloads:/downloads
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=jackett.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=jackett.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+
+  headphones:
+    image: "linuxserver/headphones"
+    restart: unless-stopped
+    expose:
+     - "8181"
+    volumes:
+     - headphones_config:/config
+     - headphones_downloads:/data/complete/headphones
+     - headphones_music:/music
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=headphones.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=headphones.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+  sonarr:
+    image: "linuxserver/sonarr"
+    restart: unless-stopped
+    expose:
+     - "8989"
+    volumes:
+     - sonarr_config:/config
+     - sonarr_downloads:/data/complete/sonarr
+     - sonarr_tv:/tv
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=sonarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=sonarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+  transmission:
+    image: "haugene/transmission-openvpn"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    expose:
+     - "9091"
+    volumes:
+     - transmission_completed_downloads:/data/complete
+     - transmission_watch:/data/watch
+    environment:
+      - OPENVPN_PROVIDER=${VPN_OPENVPN_PROVIDER:-SUBFAIL}
+      - OPENVPN_CONFIG=${VPN_OPENVPN_CONFIG:-SUBFAIL}
+      - OPENVPN_USERNAME=${VPN_OPENVPN_USERNAME:-SUBFAIL}
+      - OPENVPN_PASSWORD=${VPN_OPENVPN_PASSWORD:-SUBFAIL}
+      - OPENVPN_OPTS=--pull-filter ignore ping
+      - TRANSMISSION_UMASK=0
+      - TRANSMISSION_DOWNLOAD_DIR=/data/complete
+      - TRANSMISSION_WATCH_DIR=/data/watch
+      - WEBPROXY_ENABLED=false
+      - TZ=${MY_TZ:-SUBFAIL}
+      - VIRTUAL_PORT=9091
+      - VIRTUAL_HOST=transmission.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=transmission.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: plex
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  back:
+    driver: bridge
+
+volumes:
+  ombi_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/ombi"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  radarr_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/radarr/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  radarr_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/radarr"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  radarr_movies:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video/Movies"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  jackett_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/jackett/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  jackett_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!watch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  headphones_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/headphones/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  headphones_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/headphones"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  headphones_music:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/music"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  sonarr_blackhole:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!watch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  sonarr_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/sonarr/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  sonarr_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/sonarr"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  sonarr_tv:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video/TV"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  transmission_completed_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  transmission_watch:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!watch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

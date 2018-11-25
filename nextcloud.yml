@@ -1,0 +1,129 @@
+version: '3'
+
+services:
+  nextcloud_db:
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - nextcloud_mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${NEXTCLOUD_MYSQL_ROOT_PASSWORD:-SUBFAIL}
+      - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD:-SUBFAIL}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=${NEXTCLOUD_MYSQL_USER:-SUBFAIL}
+    networks:
+      - nextcloud_back
+    labels:
+      container_group: nextcloud
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+  nextcloud:
+    image: nextcloud:13.0.5-apache
+    expose:
+      - 80
+    depends_on:
+      - nextcloud_db   
+    volumes:
+      - nextcloud_config:/var/www/html/config
+      - nextcloud_data:/var/www/html/data
+      - nextcloud_apps:/var/www/html/custom_apps
+      - nextcloud_music:/mnt/music:ro
+      - nextcloud_video:/mnt/video:ro
+      - nextcloud_camelot:/mnt/camelot:ro
+      - nextcloud_scratch:/mnt/scratch
+      - nextcloud_books:/mnt/books:ro
+    restart: always
+    networks:
+      - reverse-proxy
+      - nextcloud_back
+      - smtp
+    environment:
+      - VIRTUAL_HOST=nextcloud.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=nextcloud.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=${NEXTCLOUD_MYSQL_USER:-SUBFAIL}
+      - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD:-SUBFAIL}
+      - MYSQL_HOST=nextcloud_db
+    labels:
+      container_group: nextcloud
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+volumes:
+  nextcloud_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/nextcloud/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  nextcloud_data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/nextcloud/data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  nextcloud_apps:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/nextcloud/custom_apps"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  nextcloud_mysql:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/nextcloud/mysql"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  nextcloud_music:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/music"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  nextcloud_video:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  nextcloud_camelot:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/camelot"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  nextcloud_scratch:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  nextcloud_books:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  nextcloud_back:
+    driver: bridge
+  smtp:
+    external:
+      name: smtp

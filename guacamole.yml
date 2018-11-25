@@ -1,0 +1,87 @@
+version: "3"
+
+services:
+  guacamole:
+    image: guacamole/guacamole:0.9.14
+    depends_on:
+      - guacd
+      - mysql-guac
+    restart: always
+#    ports:
+#      - "8081:8080/tcp"
+    expose:
+      - "8080"
+    volumes:
+      - guacamole:/config
+    networks:
+      - reverse-proxy
+      - guac_back
+    environment:
+      - GUACD_HOSTNAME=guacd
+      - MYSQL_HOSTNAME=mysql-guac
+      - MYSQL_DATABASE=guacamole_db
+      - MYSQL_USER=${GUACAMOLE_MYSQL_USER:-SUBFAIL}
+      - GUACAMOLE_HOME=/config
+      - MYSQL_PASSWORD=${GUACAMOLE_MYSQL_PASSWORD:-SUBFAIL}
+      - VIRTUAL_HOST=r.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=r.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    labels:
+      container_group: guacamole
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+  mysql-guac:
+    image: mysql/mysql-server:5.7.19-1.1.0
+    restart: always
+    volumes:
+      - guac_mysql:/var/lib/mysql
+    networks:
+      - guac_back
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysqlroot
+    labels:
+      container_group: guacamole
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+  guacd:
+    image: guacamole/guacd:0.9.14
+    restart: always
+    networks:
+      - guac_back
+    labels:
+      container_group: guacamole
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://172.16.0.38:12201
+        labels: container_group
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  guac_back:
+    driver: bridge
+
+volumes:
+  guacamole:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/guacamole.14"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  guac_mysql:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/guacamole-mysql.14"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
