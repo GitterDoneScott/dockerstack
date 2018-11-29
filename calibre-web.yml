@@ -16,11 +16,37 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: calibre
+      container_group: library
     logging:
       driver: gelf
       options:
-        gelf-address: udp://172.16.0.38:12201
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+        
+  librarian:
+    image: "linuxserver/lazylibrarian"
+    restart: unless-stopped
+    expose:
+     - "5299"
+    volumes:
+     - librarian_config:/config
+     - librarian_completed_downloads:/downloads
+     - calibre_library:/books:ro
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=librarian.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=librarian.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: library
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
         labels: container_group
 
 networks:
@@ -34,10 +60,21 @@ volumes:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/calibre-web"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
-
   calibre_library:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Calibre\ Portable/Calibre\ Library"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  librarian_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/librarian"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  librarian_completed_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}

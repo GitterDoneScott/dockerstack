@@ -13,6 +13,7 @@ services:
     networks:
       - reverse-proxy
       - back
+      - monitoring_logging
     environment:
       - VIRTUAL_HOST=dashboard.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=dashboard.${DNS_SUFFIX:-local}
@@ -72,6 +73,9 @@ networks:
       name: reverse-proxy
   back:
     driver: bridge
+  monitoring_logging:
+    external:
+      name: monitoring_logging
 
 volumes:
   grafana_storage:
