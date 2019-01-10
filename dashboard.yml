@@ -1,31 +1,31 @@
 version: "3"
 services:
-  grafana:
-    image: grafana/grafana
-    depends_on:
-      - influxdb
-    restart: always
-    expose:
-      - "3000"
-    volumes:
-      - grafana_config:/etc/grafana
-      - grafana_storage:/var/lib/grafana
-    networks:
-      - reverse-proxy
-      - back
-      - monitoring_logging
-    environment:
-      - VIRTUAL_HOST=dashboard.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=dashboard.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
-    user: "104"
-    labels:
-      container_group: monitoring
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
+#  grafana:
+#    image: grafana/grafana
+#    depends_on:
+#      - influxdb
+#    restart: always
+#    expose:
+#      - "3000"
+#    volumes:
+#      - grafana_config:/etc/grafana
+#      - grafana_storage:/var/lib/grafana
+#    networks:
+#      - reverse-proxy
+#      - back
+#      - monitoring_logging
+#    environment:
+#      - VIRTUAL_HOST=dashboard.${DNS_SUFFIX:-local}
+#      - LETSENCRYPT_HOST=dashboard.${DNS_SUFFIX:-local}
+#      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+#    user: "104"
+#    labels:
+#      container_group: monitoring
+#    logging:
+#      driver: gelf
+#      options:
+#        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+#        labels: container_group
 
   influxdb:
     image: influxdb

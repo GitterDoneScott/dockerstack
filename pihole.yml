@@ -2,17 +2,28 @@ version: "3"
 
 services:
   pihole:
-    image: diginc/pi-hole:latest
+    image: pihole/pihole:latest
     restart: always
+#   possibly needed for DHCP server
+#    cap_add:
+#     - NET_ADMIN
     ports:
       - "53:53/tcp"
       - "53:53/udp"
+      - "8095:80"
     expose:
       - "80"
     volumes:
       - pihole-config:/etc/pihole
-      - pihole-dnsmasq:/etc/dnsmasq.d
+# only needed for custom dnsmasque settings
+#      - pihole-dnsmasq:/etc/dnsmasq.d
+# wouldn't start without dns settings
+    dns:
+       - 127.0.0.1
+       - 192.168.0.254
     environment:
+#      - IPv6=False
+#      - DNSMASQ_LISTENING=all
       - ServerIP=${HOST_IP:-SUBFAIL}
       - HTTPS_METHOD=noredirect
       - VIRTUAL_HOST=pihole.${DNS_SUFFIX:-local}

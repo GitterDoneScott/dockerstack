@@ -3,6 +3,8 @@ services:
   ombi:
     image: "linuxserver/ombi"
     restart: unless-stopped
+    ports:
+     - 3579:3579
     expose:
      - "3579"
     volumes:
