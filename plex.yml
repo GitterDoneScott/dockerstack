@@ -1,7 +1,7 @@
 version: '2.2'
 services:
   plex:
-    image: plexinc/pms-docker:plexpass
+    image: plexinc/pms-docker:latest
     restart: unless-stopped
     ports:
 #     - 32400:32400 #plex web
@@ -10,13 +10,18 @@ services:
      - 32400
     volumes:
      - plex_config:/config
-     - plex_transcode:/transcode
+     - /tmp:/transcode #transcoode to memory
+#     - plex_transcode:/transcode
      - audiobooks:/mnt/audiobooks
      - scratch:/mnt/scratch
      - music:/mnt/music
      - video:/mnt/video
     environment:
-     - PLEX_MEDIA_SERVER_USE_SYSLOG=true
+     - PLEX_GID=1001
+     - PLEX_UID=1000
+     - CHANGE_CONFIG_DIR_OWNERSHIP=true
+#     - PLEX_MEDIA_SERVER_USE_SYSLOG=true
+     - HTTPS_METHOD=noredirect #older devices can't do TLS
      - VIRTUAL_PORT=32400
 #     - PLEX_CLAIM= #valid for 5 minutes
      - TZ=${MY_TZ:-SUBFAIL}
