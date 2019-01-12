@@ -1,0 +1,68 @@
+version: '3' # version of docker-compose to use
+services:
+  alltube:
+    image: rudloff/alltube
+    restart: always
+    expose:
+      - 80
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - VIRTUAL_HOST=alltube.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=alltube.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: youtube
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+  youtube-dl:
+    image: gitterdone/youtube-dl-server
+    restart: always
+    expose:
+      - 8080
+    environment:
+      - DL_AUDIO_PATH=/audio/
+      - DL_VIDEO_PATH=/video/
+      - TZ=${MY_TZ:-SUBFAIL}
+      - VIRTUAL_HOST=youtubedl.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=youtubedl.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    volumes:
+      - youtube_video:/video:nocopy
+      - youtube_music:/audio:nocopy
+    networks:
+      - reverse-proxy
+    labels:
+      container_group: youtube
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+volumes:
+  youtube_video:
+    driver: "local"
+    driver_opts:
+      device: ":${NAS_BASE_PATH:-SUBFAIL}/video/youtube"
+      type: nfs
+      o: addr=${NAS_ADDR:-SUBFAIL},rw,vers=4
+
+  youtube_music:
+    driver: "local"
+    driver_opts:
+      device: ":${NAS_BASE_PATH:-SUBFAIL}/music/ripped_from_video"
+      type: nfs
+      o: addr=${NAS_ADDR:-SUBFAIL},rw,vers=4
+
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+
