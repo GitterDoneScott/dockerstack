@@ -1,0 +1,39 @@
+version: '2.2'
+services:
+  rclone:
+    image: tynor88/rclone
+    restart: always
+    expose:
+      - 8080
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - CRON_SCHEDULE=0 3 * * *
+      #sync destination from .rclone.conf
+      - SYNC_DESTINATION=SharedGooglePhotos
+      - SYNC_DESTINATION_SUBPATH=Google Photos
+      - SYNC_COMMAND=rclone copy "$$SYNC_DESTINATION:/$$SYNC_DESTINATION_SUBPATH" /data
+     #- SYNC_COMMAND=rclone copy "$SYNC_DESTINATION:/Google Photos/" /data --dry-run
+    volumes:
+      - rclone_config_1:/config
+      - rclone_data_1:/data
+    labels:
+      container_group: rclone
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+volumes:
+  rclone_data_1:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/GooglePhotos"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  rclone_config_1:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/rclone"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
