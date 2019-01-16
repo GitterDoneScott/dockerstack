@@ -5,8 +5,8 @@ services:
     image: pihole/pihole:latest
     restart: always
 #   possibly needed for DHCP server
-#    cap_add:
-#     - NET_ADMIN
+    cap_add:
+     - NET_ADMIN
     ports:
       - "53:53/tcp"
       - "53:53/udp"
