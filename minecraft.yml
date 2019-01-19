@@ -1,0 +1,66 @@
+version: '2.2'
+services:
+  minecraft1:
+    ports:
+      - "25565:25565"
+    image: itzg/minecraft-server
+    container_name: minecraft1
+    restart: always
+    volumes:
+      - minecraft1_data:/data
+    environment:
+      - EULA=TRUE
+      - VERSION=1.13.2
+      - ONLINE_MODE=FALSE
+      - MODE=creative
+      - OPS=c,b
+    labels:
+      container_group: minecraft
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+
+  minecraft2:
+    ports:
+      - "25566:25565"
+    image: itzg/minecraft-server
+    container_name: minecraft2
+    restart: always
+    volumes:
+      - minecraft2_data:/data
+    environment:
+      - EULA=TRUE
+      - VERSION=1.13.2
+      - ONLINE_MODE=FALSE
+      - TYPE=SPIGOT
+      - SPIGOT_DOWNLOAD_URL=https://cdn.getbukkit.org/spigot/spigot-1.13.2.jar
+      - MAX_MEMORY=2G
+      - OPS=c,b
+      - MODE=creative
+#      - WORLD=
+#      - MODPACK=
+    labels:
+      container_group: minecraft
+    logging:
+      driver: gelf
+      options:
+        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+        labels: container_group
+      
+volumes:
+  minecraft1_data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/minecraft/data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  minecraft2_data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/minecraft/data2"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
