@@ -4,6 +4,8 @@ services:
   smtp:
     image: namshi/smtp
     restart: always
+    ports:
+      - 25:25
     environment:
       - GMAIL_USER=${SMTP_GMAIL_USER:-SUBFAIL}
       - GMAIL_PASSWORD=${SMTP_GMAIL_PASSWORD:-SUBFAIL}
