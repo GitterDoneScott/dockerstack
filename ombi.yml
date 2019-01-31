@@ -141,6 +141,8 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun
+    ports:
+     - "9999:9999" #web proxy
     expose:
      - "9091"
     volumes:
@@ -155,7 +157,17 @@ services:
       - TRANSMISSION_UMASK=0
       - TRANSMISSION_DOWNLOAD_DIR=/data/complete
       - TRANSMISSION_WATCH_DIR=/data/watch
-      - WEBPROXY_ENABLED=false
+      - TRANSMISSION_WATCH_DIR_ENABLED=true
+      - TRANSMISSION_SPEED_LIMIT_UP_ENABLED=true
+      - TRANSMISSION_SPEED_LIMIT_UP=50
+      - TRANSMISSION_DOWNLOAD_QUEUE_SIZE=3
+      - TRANSMISSION_DOWNLOAD_QUEUE_ENABLED=true
+      - TRANSMISSION_RATIO_LIMIT_ENABLED=true
+      - TRANSMISSION_RATIO_LIMIT=1
+      - TRANSMISSION_SPEED_LIMIT_DOWN_ENABLED=false
+      - TRANSMISSION_SPEED_LIMIT_DOWN=100
+      - WEBPROXY_ENABLED=true
+      - WEBPROXY_PORT=9999
       - TZ=${MY_TZ:-SUBFAIL}
       - VIRTUAL_PORT=9091
       - VIRTUAL_HOST=transmission.${DNS_SUFFIX:-local}
