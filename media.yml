@@ -23,7 +23,6 @@ services:
       options:
         gelf-address: ${GELF_ADDRESS:-SUBFAIL}
         labels: container_group
- 
 
   radarr:
     image: "linuxserver/radarr"
@@ -52,7 +51,6 @@ services:
         gelf-address: ${GELF_ADDRESS:-SUBFAIL}
         labels: container_group
 
-
   jackett:
     image: "linuxserver/jackett"
     restart: unless-stopped
@@ -78,7 +76,6 @@ services:
       options:
         gelf-address: ${GELF_ADDRESS:-SUBFAIL}
         labels: container_group
-
 
   headphones:
     image: "linuxserver/headphones"
@@ -134,55 +131,31 @@ services:
         gelf-address: ${GELF_ADDRESS:-SUBFAIL}
         labels: container_group
 
-  transmission:
-    image: "haugene/transmission-openvpn"
+  librarian:
+    image: "linuxserver/lazylibrarian"
     restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun
-    ports:
-     - "9999:9999" #web proxy
     expose:
-     - "9091"
+     - "5299"
     volumes:
-     - transmission_completed_downloads:/data/complete
-     - transmission_watch:/data/watch
+     - librarian_config:/config
+     - librarian_completed_downloads:/downloads
+     - calibre_library:/books:ro
     environment:
-      - OPENVPN_PROVIDER=${VPN_OPENVPN_PROVIDER:-SUBFAIL}
-      - OPENVPN_CONFIG=${VPN_OPENVPN_CONFIG:-SUBFAIL}
-      - OPENVPN_USERNAME=${VPN_OPENVPN_USERNAME:-SUBFAIL}
-      - OPENVPN_PASSWORD=${VPN_OPENVPN_PASSWORD:-SUBFAIL}
-      - OPENVPN_OPTS=--pull-filter ignore ping
-      - TRANSMISSION_UMASK=0
-      - TRANSMISSION_DOWNLOAD_DIR=/data/complete
-      - TRANSMISSION_WATCH_DIR=/data/watch
-      - TRANSMISSION_WATCH_DIR_ENABLED=true
-      - TRANSMISSION_SPEED_LIMIT_UP_ENABLED=true
-      - TRANSMISSION_SPEED_LIMIT_UP=50
-      - TRANSMISSION_DOWNLOAD_QUEUE_SIZE=3
-      - TRANSMISSION_DOWNLOAD_QUEUE_ENABLED=true
-      - TRANSMISSION_RATIO_LIMIT_ENABLED=true
-      - TRANSMISSION_RATIO_LIMIT=1
-      - TRANSMISSION_SPEED_LIMIT_DOWN_ENABLED=false
-      - TRANSMISSION_SPEED_LIMIT_DOWN=100
-      - WEBPROXY_ENABLED=true
-      - WEBPROXY_PORT=9999
       - TZ=${MY_TZ:-SUBFAIL}
-      - VIRTUAL_PORT=9091
-      - VIRTUAL_HOST=transmission.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=transmission.${DNS_SUFFIX:-local}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=librarian.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=librarian.${DNS_SUFFIX:-local}
       - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - reverse-proxy
     labels:
-      container_group: plex
+      container_group: library
     logging:
       driver: gelf
       options:
         gelf-address: ${GELF_ADDRESS:-SUBFAIL}
         labels: container_group
-
 
 networks:
   reverse-proxy:
@@ -282,15 +255,25 @@ volumes:
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
-  transmission_completed_downloads:
+  librarian_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/librarian"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  librarian_completed_downloads:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
-  transmission_watch:
+
+  calibre_library:
     driver: "local"
     driver_opts:
-      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!watch"
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Calibre\ Portable/Calibre\ Library"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+
+
