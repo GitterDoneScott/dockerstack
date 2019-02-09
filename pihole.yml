@@ -13,8 +13,8 @@ services:
       - "8095:80"
     expose:
       - "80"
-    volumes:
-      - pihole-config:/etc/pihole
+#    volumes:
+#      - pihole-config:/etc/pihole
 # only needed for custom dnsmasque settings
 #      - pihole-dnsmasq:/etc/dnsmasq.d
 # wouldn't start without dns settings
@@ -35,11 +35,11 @@ services:
       - reverse-proxy
     labels:
       container_group: dns
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
+#    logging:
+#      driver: gelf
+#      options:
+#        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
+#        labels: container_group
 
 networks:
   reverse-proxy:
