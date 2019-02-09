@@ -1,7 +1,7 @@
 version: '2.2'
 services:
   syncthing:
-    image: linuxserver/syncthing:144
+    image: linuxserver/syncthing:v1.0.0-ls1
     restart: unless-stopped
     ports:
      - 22000:22000 #
