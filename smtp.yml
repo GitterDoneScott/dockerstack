@@ -14,11 +14,6 @@ services:
       - smtp
     labels:
       container_group: smtp
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 networks:
   smtp:

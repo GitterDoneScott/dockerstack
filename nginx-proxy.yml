@@ -16,13 +16,11 @@ services:
     labels:
       container_group: proxy
       com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+      co.elastic.logs/module: nginx
+      co.elastic.logs/fileset.stdout: access
+      co.elastic.logs/fileset.stderr: error
     networks:
       - reverse-proxy
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
   nginx-gen:
     image: jwilder/docker-gen:0.7.3
@@ -47,11 +45,6 @@ services:
       - DEFAULT_HOST=${DEFAULT_HOST:-SUBFAIL}
     networks:
       - reverse-proxy
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
   nginx-ssl:
     image: jrcs/letsencrypt-nginx-proxy-companion:v1.7
@@ -79,11 +72,6 @@ services:
       - reverse-proxy
     labels:
       container_group: proxy
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
 networks:
   reverse-proxy:

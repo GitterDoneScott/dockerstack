@@ -18,11 +18,6 @@ services:
       - reverse-proxy
     labels:
       container_group: plex
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   radarr:
     image: "linuxserver/radarr"
@@ -45,11 +40,6 @@ services:
       - reverse-proxy
     labels:
       container_group: plex
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   jackett:
     image: "linuxserver/jackett"
@@ -71,11 +61,6 @@ services:
       - reverse-proxy
     labels:
       container_group: plex
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   headphones:
     image: "linuxserver/headphones"
@@ -98,11 +83,6 @@ services:
       - reverse-proxy
     labels:
       container_group: plex
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   sonarr:
     image: "linuxserver/sonarr"
@@ -125,11 +105,6 @@ services:
       - reverse-proxy
     labels:
       container_group: plex
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   librarian:
     image: "linuxserver/lazylibrarian"
@@ -151,11 +126,6 @@ services:
       - reverse-proxy
     labels:
       container_group: library
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 networks:
   reverse-proxy:

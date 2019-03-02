@@ -18,11 +18,6 @@ services:
       - rclone_data_1:/data
     labels:
       container_group: rclone
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 volumes:
   rclone_data_1:

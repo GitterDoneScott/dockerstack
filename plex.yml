@@ -34,11 +34,6 @@ services:
 #    cpus: 1.0 #limit to x cpu
     labels:
       container_group: plex
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 networks:
   reverse-proxy:

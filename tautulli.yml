@@ -11,15 +11,11 @@ services:
      - VIRTUAL_HOST=tautulli.${DNS_SUFFIX:-local}
      - LETSENCRYPT_HOST=tautulli.${DNS_SUFFIX:-local}
      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+     - TZ=${MY_TZ:-SUBFAIL}
     networks:
       - reverse-proxy
     labels:
       container_group: monitoring
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
 networks:
   reverse-proxy:

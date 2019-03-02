@@ -29,15 +29,8 @@ services:
      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - reverse-proxy
-#    cpu_percent: 30 #limit cpu usage percentage
-#    cpus: 1.0 #limit to x cpu
     labels:
       container_group: sync
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
 networks:
   reverse-proxy:

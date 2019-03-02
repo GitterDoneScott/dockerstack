@@ -20,11 +20,7 @@ services:
       - reverse-proxy
     labels:
       container_group: monitoring
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
+
 networks:
   reverse-proxy:
     external: true

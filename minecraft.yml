@@ -16,11 +16,6 @@ services:
       - OPS=c,b
     labels:
       container_group: minecraft
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   minecraft2:
     ports:
@@ -43,11 +38,6 @@ services:
 #      - MODPACK=
     labels:
       container_group: minecraft
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
       
 volumes:
   minecraft1_data:

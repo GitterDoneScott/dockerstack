@@ -15,11 +15,6 @@ services:
       - nextcloud_back
     labels:
       container_group: nextcloud
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   nextcloud:
     image: nextcloud:13.0.5-apache
@@ -51,11 +46,6 @@ services:
       - MYSQL_HOST=nextcloud_db
     labels:
       container_group: nextcloud
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 volumes:
   nextcloud_config:

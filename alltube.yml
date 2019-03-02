@@ -14,11 +14,6 @@ services:
       - reverse-proxy
     labels:
       container_group: youtube
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
   youtube-dl:
     image: gitterdone/youtube-dl-server
@@ -39,11 +34,6 @@ services:
       - reverse-proxy
     labels:
       container_group: youtube
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 volumes:
   youtube_video:

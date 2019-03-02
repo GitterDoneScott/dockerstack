@@ -45,11 +45,6 @@ services:
       - INFLUXDB_GRAPHITE_ENABLED=true
     labels:
       container_group: monitoring
-    logging:
-      driver: gelf
-      options:
-        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
-        labels: container_group
 
 #  cadvisor:
 #    image: google/cadvisor

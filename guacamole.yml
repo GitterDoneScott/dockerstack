@@ -28,11 +28,6 @@ services:
       - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     labels:
       container_group: guacamole
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
   mysql-guac:
     image: mysql/mysql-server:5.7.19-1.1.0
@@ -45,11 +40,6 @@ services:
       - MYSQL_ROOT_PASSWORD=mysqlroot
     labels:
       container_group: guacamole
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
   guacd:
     image: guacamole/guacd:0.9.14
@@ -58,11 +48,6 @@ services:
       - guac_back
     labels:
       container_group: guacamole
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://172.16.0.38:12201
-        labels: container_group
 
 networks:
   reverse-proxy:
