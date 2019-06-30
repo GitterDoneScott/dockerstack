@@ -33,11 +33,28 @@ services:
       - WEBPASSWORD=${PIHOLE_WEBPASS:-SUBFAIL}
     networks:
       - reverse-proxy
+      - back
     labels:
       container_group: dns
 
+  pihole-exporter:
+    image: ekofr/pihole-exporter:latest
+    restart: always
+    ports:
+      - 9311:9311/tcp
+    environment:
+      - PIHOLE_HOSTNAME=pihole
+      - PIHOLE_PASSWORD=${PIHOLE_WEBPASS:-local}
+    networks:
+      - back
+      - monitoring_logging    
+
 networks:
   reverse-proxy:
+    external: true
+  back:
+    driver: bridge
+  monitoring_logging:
     external: true
 
 volumes:

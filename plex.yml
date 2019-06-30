@@ -16,6 +16,7 @@ services:
      - scratch:/mnt/scratch
      - music:/mnt/music
      - video:/mnt/video
+     - /opt/containerlogs/plex:/config/Library/Application Support/Plex Media Server/Logs #expose the logs to the host for Filebeat
     environment:
      - PLEX_GID=1001
      - PLEX_UID=1000
