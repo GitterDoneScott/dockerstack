@@ -1,23 +1,23 @@
 version: '2.2'
 services:
-  ombi:
-    image: "linuxserver/ombi"
-    restart: unless-stopped
-    ports:
-     - 3579:3579
-    expose:
-     - "3579"
-    volumes:
-     - ombi_config:/config
-    environment:
-      - TZ=${MY_TZ:-SUBFAIL}
-      - VIRTUAL_HOST=request.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=request.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
-    networks:
-      - reverse-proxy
-    labels:
-      container_group: plex
+#  ombi:
+#    image: "linuxserver/ombi"
+#    restart: unless-stopped
+#    ports:
+#     - 3579:3579
+#    expose:
+#     - "3579"
+#    volumes:
+#     - ombi_config:/config
+#    environment:
+#      - TZ=${MY_TZ:-SUBFAIL}
+#      - VIRTUAL_HOST=request.${DNS_SUFFIX:-local}
+#      - LETSENCRYPT_HOST=request.${DNS_SUFFIX:-local}
+#      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+#    networks:
+#      - reverse-proxy
+#    labels:
+#      container_group: plex
 
   radarr:
     image: "linuxserver/radarr"
