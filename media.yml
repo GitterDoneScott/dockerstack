@@ -20,7 +20,7 @@ services:
 #      container_group: plex
 
   radarr:
-    image: "linuxserver/radarr"
+    image: "linuxserver/radarr:preview"
     restart: unless-stopped
     expose:
      - "7878"
@@ -42,7 +42,7 @@ services:
       container_group: plex
 
   jackett:
-    image: "linuxserver/jackett"
+    image: "linuxserver/jackett:latest"
     restart: unless-stopped
     expose:
      - "9117"
@@ -63,7 +63,7 @@ services:
       container_group: plex
 
   headphones:
-    image: "linuxserver/headphones"
+    image: "linuxserver/headphones:latest"
     restart: unless-stopped
     expose:
      - "8181"
@@ -85,7 +85,7 @@ services:
       container_group: plex
 
   sonarr:
-    image: "linuxserver/sonarr"
+    image: "linuxserver/sonarr:preview"
     restart: unless-stopped
     expose:
      - "8989"
@@ -107,7 +107,7 @@ services:
       container_group: plex
 
   librarian:
-    image: "linuxserver/lazylibrarian"
+    image: "linuxserver/lazylibrarian:latest"
     restart: unless-stopped
     expose:
      - "5299"
