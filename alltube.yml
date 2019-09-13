@@ -1,7 +1,7 @@
 version: '3' # version of docker-compose to use
 services:
   alltube:
-    image: rudloff/alltube
+    image: rudloff/alltube:latest
     restart: always
     expose:
       - 80
@@ -16,20 +16,18 @@ services:
       container_group: youtube
 
   youtube-dl:
-    image: gitterdone/youtube-dl-server
+    image: gitterdone/youtube-dl-webui:latest
     restart: always
     expose:
-      - 8080
+      - 8282
     environment:
-      - DL_AUDIO_PATH=/audio/
       - DL_VIDEO_PATH=/video/
       - TZ=${MY_TZ:-SUBFAIL}
       - VIRTUAL_HOST=youtubedl.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=youtubedl.${DNS_SUFFIX:-local}
       - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     volumes:
-      - youtube_video:/video:nocopy
-      - youtube_music:/audio:nocopy
+      - youtube_video:/root/output:nocopy
     networks:
       - reverse-proxy
     labels:
