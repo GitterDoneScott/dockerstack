@@ -1,14 +1,14 @@
 version: '3' # version of docker-compose to use
 services:
   phlex:
-    image: digitalhigh/phlex
+    image: digitalhigh/flextv:latest
     privileged: true
     restart: always
     expose:
       - 5666
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
-      - VIRTUAL_PORT=5666
+      - VIRTUAL_PORT=80
       - VIRTUAL_HOST=phlex.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=phlex.${DNS_SUFFIX:-local}
       - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
