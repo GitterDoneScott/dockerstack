@@ -32,7 +32,9 @@ services:
       - TYPE=SPIGOT
       - SPIGOT_DOWNLOAD_URL=https://cdn.getbukkit.org/spigot/spigot-1.13.2.jar
       - MAX_MEMORY=2G
-      - OPS=c,b
+      - MAX_BUILD_HEIGHT=1000
+      - WHITELIST=cody,brooke,dad,alex,taylor
+      - OPS=cody,brooke,dad,alex,taylor
       - MODE=creative
 #      - WORLD=
 #      - MODPACK=
