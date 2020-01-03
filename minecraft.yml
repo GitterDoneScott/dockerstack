@@ -1,21 +1,21 @@
 version: '2.2'
 services:
-  minecraft1:
-    ports:
-      - "25565:25565"
-    image: itzg/minecraft-server
-    container_name: minecraft1
-    restart: always
-    volumes:
-      - minecraft1_data:/data
-    environment:
-      - EULA=TRUE
-      - VERSION=1.13.2
-      - ONLINE_MODE=FALSE
-      - MODE=creative
-      - OPS=c,b
-    labels:
-      container_group: minecraft
+#  minecraft1:
+#    ports:
+#      - "25565:25565"
+#    image: itzg/minecraft-server
+#    container_name: minecraft1
+#    restart: always
+#    volumes:
+#      - minecraft1_data:/data
+#    environment:
+#      - EULA=TRUE
+#      - VERSION=1.13.2
+#      - ONLINE_MODE=FALSE
+#      - MODE=creative
+#      - OPS=c,b
+#    labels:
+#      container_group: minecraft
 
   minecraft2:
     ports:
