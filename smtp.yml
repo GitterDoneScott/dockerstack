@@ -17,4 +17,5 @@ services:
 
 networks:
   smtp:
-    driver: bridge
+    external:
+      name: smtp
