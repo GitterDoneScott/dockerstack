@@ -18,6 +18,7 @@ services:
      - syncthing_pictures:/mnt/pictures
      - syncthing_data:/mnt/data
      - syncthing_home:/mnt/home
+     - syncthing_bitwarden:/mnt/bitwarden
     environment:
      - PGID=1001
      - PUID=0
@@ -89,5 +90,11 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/home"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_bitwarden:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/bitwarden"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
