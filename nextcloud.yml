@@ -17,7 +17,7 @@ services:
       container_group: nextcloud
 
   nextcloud:
-    image: nextcloud:16-apache
+    image: nextcloud:18-apache
     expose:
       - 80
     depends_on:

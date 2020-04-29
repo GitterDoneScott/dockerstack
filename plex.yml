@@ -4,7 +4,7 @@ services:
     image: plexinc/pms-docker:latest
     restart: unless-stopped
     ports:
-#     - 32400:32400 #plex web
+     - 32400:32400 #plex web
      - 33400:33400 #insecure web tools
     expose:
      - 32400

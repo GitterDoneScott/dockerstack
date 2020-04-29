@@ -47,7 +47,7 @@ services:
       - reverse-proxy
 
   nginx-ssl:
-    image: jrcs/letsencrypt-nginx-proxy-companion:v1.7
+    image: jrcs/letsencrypt-nginx-proxy-companion:v1.12.1
     restart: always
     container_name: nginx-ssl
     depends_on:

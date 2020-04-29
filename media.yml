@@ -1,4 +1,4 @@
-version: '2.2'
+version: '3.3'
 services:
 #  ombi:
 #    image: "linuxserver/ombi"
@@ -115,6 +115,12 @@ services:
      - librarian_config:/config
      - librarian_completed_downloads:/downloads
      - calibre_library:/books:ro
+     - type: volume
+       source: audiobooks
+       target: /media/audiobooks
+       volume:
+         read_only: false
+         nocopy: true
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=0
@@ -246,4 +252,10 @@ volumes:
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
+  audiobooks:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Audio\ books"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
 

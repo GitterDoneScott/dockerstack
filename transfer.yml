@@ -11,6 +11,8 @@ services:
      - "9999:9999" #web proxy
     expose:
      - "9091"
+    dns:
+     - 8.8.8.8
     volumes:
      - transmission_completed_downloads:/data/complete
      - transmission_watch:/data/watch
@@ -20,6 +22,8 @@ services:
       - OPENVPN_USERNAME=${VPN_OPENVPN_USERNAME:-SUBFAIL}
       - OPENVPN_PASSWORD=${VPN_OPENVPN_PASSWORD:-SUBFAIL}
       - OPENVPN_OPTS=--pull-filter ignore ping
+#      - CREATE_TUN_DEVICE=true
+      - DROP_DEFAULT_ROUTE=true
       - TRANSMISSION_UMASK=0
       - TRANSMISSION_DOWNLOAD_DIR=/data/complete
       - TRANSMISSION_WATCH_DIR=/data/watch
@@ -32,7 +36,7 @@ services:
       - TRANSMISSION_RATIO_LIMIT=1
       - TRANSMISSION_SPEED_LIMIT_DOWN_ENABLED=false
       - TRANSMISSION_SPEED_LIMIT_DOWN=100
-      - WEBPROXY_ENABLED=true
+      - WEBPROXY_ENABLED=false
       - WEBPROXY_PORT=9999
       - TZ=${MY_TZ:-SUBFAIL}
       - VIRTUAL_PORT=9091
