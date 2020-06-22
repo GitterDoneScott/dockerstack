@@ -16,6 +16,7 @@ services:
     volumes:
      - transmission_completed_downloads:/data/complete
      - transmission_watch:/data/watch
+     - transmission_incomplete_downloads:/data/incomplete
     environment:
       - OPENVPN_PROVIDER=${VPN_OPENVPN_PROVIDER:-SUBFAIL}
       - OPENVPN_CONFIG=${VPN_OPENVPN_CONFIG:-SUBFAIL}
@@ -43,10 +44,31 @@ services:
       - VIRTUAL_HOST=transmission.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=transmission.${DNS_SUFFIX:-local}
       - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+      - TRANSMISSION_INCOMPLETE_DIR=/data/incomplete
+      - TRANSMISSION_INCOMPLETE_DIR_ENABLED=true
     networks:
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.transmission2.tls=true"
+      - "traefik.http.routers.transmission2.tls.certresolver=myresolver"
+      - "traefik.http.routers.transmission2.rule=Host(`transmission.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.transmission2.priority=100"
+      - "traefik.http.routers.transmission2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.transmission.tls=true"
+      - "traefik.http.routers.transmission.rule=Host(`transmission.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.transmission.priority=90"
+      - "traefik.http.routers.transmission.middlewares=myauth"
+      - "traefik.http.routers.transmission.entrypoints=websecure"
+      - "traefik.http.routers.transmission.tls.certresolver=myresolver"
 
 networks:
   reverse-proxy:
@@ -58,6 +80,12 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  transmission_incomplete_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!incomplete"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
   transmission_watch:

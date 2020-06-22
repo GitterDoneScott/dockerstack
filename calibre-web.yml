@@ -16,7 +16,12 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: library
+      - "container_group=media"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.routers.library.tls.certresolver=myresolver"
+      - "traefik.http.routers.library.rule=Host(`library.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.library.entrypoints=websecure"
 
 networks:
   reverse-proxy:

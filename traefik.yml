@@ -1,0 +1,96 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.2"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+     #- "--api.insecure=true"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.openvpn_udp.address=:1194/udp"
+      - "--entrypoints.dns.address=:53"
+      - "--entrypoints.dns_udp.address=:53/udp"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #- "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=web"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=${LETS_ENC_EMAIL:-SUBFAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"  
+      - "443:443"
+      - "53:53/tcp" #pihole dns
+      - "53:53/udp"  #pihole dns udp
+      - "1194:1194/udp"  #openvpn
+ #     - "8080:8080"
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      # internal route for internal ips
+      - "traefik.http.routers.traefik2.service=api@internal"
+      - "traefik.http.routers.traefik2.tls=true"
+      - "traefik.http.routers.traefik2.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik2.rule=Host(`traefik.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.traefik2.priority=100"
+ #     - "traefik.http.routers.traefik2.middlewares=bypassauth"
+      - "traefik.http.routers.traefik2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.traefik.priority=90"
+      - "traefik.http.routers.traefik.middlewares=myauth"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      
+      #middlewares are reusable
+      - "traefik.http.middlewares.myauth.chain.middlewares=auth"
+      - "traefik.http.middlewares.bypassauth.chain.middlewares="
+      #- "traefik.http.middlewares.auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/" #test/test
+      - "traefik.http.middlewares.auth.basicauth.users=${DEFAULT_USER:-SUBFAIL}"
+
+    volumes:
+      - "traefik-certs:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  whoami:
+    image: "containous/whoami"
+    container_name: "simple-service"
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.whoami2.tls.certresolver=myresolver"
+      - "traefik.http.routers.whoami2.rule=Host(`whoami.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.whoami2.priority=100"
+#      - "traefik.http.routers.whoami2.middlewares=bypassauth"
+      - "traefik.http.routers.whoami2.entrypoints=websecure"
+
+      - "traefik.http.routers.whoami.rule=Host(`whoami.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.whoami.priority=90"
+      - "traefik.http.routers.whoami.middlewares=myauth"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver"
+          
+networks:
+  reverse-proxy:
+    external: true
+      
+volumes:
+  traefik-certs:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/traefik/certs"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

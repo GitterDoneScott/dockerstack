@@ -15,7 +15,25 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: monitoring
+      - "container_group=plex"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.tautulli.loadbalancer.server.port=8181" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.tautulli2.tls=true"
+      - "traefik.http.routers.tautulli2.tls.certresolver=myresolver"
+      - "traefik.http.routers.tautulli2.rule=Host(`tautulli.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.tautulli2.priority=100"
+      - "traefik.http.routers.tautulli2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.tautulli.tls=true"
+      - "traefik.http.routers.tautulli.rule=Host(`tautulli.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.tautulli.priority=90"
+      - "traefik.http.routers.tautulli.middlewares=myauth"
+      - "traefik.http.routers.tautulli.entrypoints=websecure"
+      - "traefik.http.routers.tautulli.tls.certresolver=myresolver"
 
 networks:
   reverse-proxy:

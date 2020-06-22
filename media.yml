@@ -20,7 +20,7 @@ services:
 #      container_group: plex
 
   radarr:
-    image: "linuxserver/radarr:preview"
+    image: "linuxserver/radarr:latest"
     restart: unless-stopped
     expose:
      - "7878"
@@ -39,7 +39,25 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.radarr2.tls=true"
+      - "traefik.http.routers.radarr2.tls.certresolver=myresolver"
+      - "traefik.http.routers.radarr2.rule=Host(`radarr.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.radarr2.priority=100"
+      - "traefik.http.routers.radarr2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.radarr.tls=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.radarr.priority=90"
+      - "traefik.http.routers.radarr.middlewares=myauth"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=myresolver"
 
   jackett:
     image: "linuxserver/jackett:latest"
@@ -60,7 +78,25 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.jackett.loadbalancer.server.port=9117" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.jackett2.tls=true"
+      - "traefik.http.routers.jackett2.tls.certresolver=myresolver"
+      - "traefik.http.routers.jackett2.rule=Host(`jackett.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.jackett2.priority=100"
+      - "traefik.http.routers.jackett2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.jackett.tls=true"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.jackett.priority=90"
+      - "traefik.http.routers.jackett.middlewares=myauth"
+      - "traefik.http.routers.jackett.entrypoints=websecure"
+      - "traefik.http.routers.jackett.tls.certresolver=myresolver"
 
   headphones:
     image: "linuxserver/headphones:latest"
@@ -82,10 +118,28 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.headphones.loadbalancer.server.port=8181" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.headphones2.tls=true"
+      - "traefik.http.routers.headphones2.tls.certresolver=myresolver"
+      - "traefik.http.routers.headphones2.rule=Host(`headphones.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.headphones2.priority=100"
+      - "traefik.http.routers.headphones2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.headphones.tls=true"
+      - "traefik.http.routers.headphones.rule=Host(`headphones.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.headphones.priority=90"
+      - "traefik.http.routers.headphones.middlewares=myauth"
+      - "traefik.http.routers.headphones.entrypoints=websecure"
+      - "traefik.http.routers.headphones.tls.certresolver=myresolver"
 
   sonarr:
-    image: "linuxserver/sonarr:preview"
+    image: "linuxserver/sonarr:latest"
     restart: unless-stopped
     expose:
      - "8989"
@@ -104,7 +158,26 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.sonarr2.tls=true"
+      - "traefik.http.routers.sonarr2.tls.certresolver=myresolver"
+      - "traefik.http.routers.sonarr2.rule=Host(`sonarr.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.sonarr2.priority=100"
+      - "traefik.http.routers.sonarr2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.sonarr.tls=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.sonarr.priority=90"
+      - "traefik.http.routers.sonarr.middlewares=myauth"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
+
 
   librarian:
     image: "linuxserver/lazylibrarian:latest"
@@ -131,7 +204,25 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: library
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.librarian.loadbalancer.server.port=5299" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.librarian2.tls=true"
+      - "traefik.http.routers.librarian2.tls.certresolver=myresolver"
+      - "traefik.http.routers.librarian2.rule=Host(`librarian.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.librarian2.priority=100"
+      - "traefik.http.routers.librarian2.entrypoints=websecure"
+      # default route for external basic auth
+      - "traefik.http.routers.librarian.tls=true"
+      - "traefik.http.routers.librarian.rule=Host(`librarian.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.librarian.priority=90"
+      - "traefik.http.routers.librarian.middlewares=myauth"
+      - "traefik.http.routers.librarian.entrypoints=websecure"
+      - "traefik.http.routers.librarian.tls.certresolver=myresolver"
 
 networks:
   reverse-proxy:

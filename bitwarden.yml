@@ -24,6 +24,13 @@ services:
     networks:
       - reverse-proxy
       - smtp
+    labels:
+      - "container_group=bitwarden"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.routers.vault.tls.certresolver=myresolver"
+      - "traefik.http.routers.vault.rule=Host(`vault.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.vault.entrypoints=websecure"
 
 volumes:
   bitwarden_data:

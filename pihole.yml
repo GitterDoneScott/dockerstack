@@ -7,24 +7,26 @@ services:
 #   possibly needed for DHCP server
     cap_add:
      - NET_ADMIN
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "8095:80"
+ #   ports:
+ #     - "53:53/tcp"
+ #     - "53:53/udp"
+ #     - "8095:80"
     expose:
       - "80"
+      - "53/tcp"
+      - "53/udp"
 #    volumes:
 #      - pihole-config:/etc/pihole
 # only needed for custom dnsmasque settings
 #      - pihole-dnsmasq:/etc/dnsmasq.d
 # wouldn't start without dns settings
-    dns:
-       - 127.0.0.1
-       - 192.168.0.254
+#    dns:
+#       - 127.0.0.1
+#       - 192.168.0.254
     environment:
 #      - IPv6=False
 #      - DNSMASQ_LISTENING=all
-      - ServerIP=${HOST_IP:-SUBFAIL}
+#      - ServerIP=${HOST_IP:-SUBFAIL}
       - HTTPS_METHOD=noredirect
       - VIRTUAL_HOST=pihole.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=pihole.${DNS_SUFFIX:-local}
@@ -33,9 +35,45 @@ services:
       - WEBPASSWORD=${PIHOLE_WEBPASS:-SUBFAIL}
     networks:
       - reverse-proxy
-      - back
+    #  - back
     labels:
-      container_group: dns
+      - "container_group=dns"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.pihole.loadbalancer.server.port=80" #needed if multiple ports are exposed
+
+      # internal route for internal ips
+      - "traefik.http.routers.pihole2.tls=true"
+      - "traefik.http.routers.pihole2.tls.certresolver=myresolver"
+      - "traefik.http.routers.pihole2.rule=Host(`pihole.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.pihole2.priority=100"
+      - "traefik.http.routers.pihole2.entrypoints=websecure"
+      - "traefik.http.routers.pihole2.middlewares=add-pihole"
+      # default route for external basic auth
+      - "traefik.http.routers.pihole.tls=true"
+      - "traefik.http.routers.pihole.rule=Host(`pihole.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.pihole.priority=90"
+      - "traefik.http.routers.pihole.middlewares=myauth,add-pihole"
+      - "traefik.http.routers.pihole.entrypoints=websecure"
+      - "traefik.http.routers.pihole.tls.certresolver=myresolver"
+
+      - "traefik.http.middlewares.add-pihole.addPrefix.prefix=/admin"
+
+
+      #tcp 
+      - "traefik.tcp.routers.pihole.entrypoints=dns"
+      - "traefik.tcp.routers.pihole.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.pihole.service=pihole"
+      - "traefik.tcp.routers.pihole.tls=false"
+      - "traefik.tcp.services.pihole.loadbalancer.server.port=53"
+      #udp 
+      - "traefik.udp.routers.pihole.entrypoints=dns_udp"
+      - "traefik.udp.routers.pihole.service=pihole"
+      - "traefik.udp.services.pihole.loadbalancer.server.port=53"
+
+
+
 
   pihole-exporter:
     image: ekofr/pihole-exporter:latest
@@ -47,7 +85,7 @@ services:
       - PIHOLE_PASSWORD=${PIHOLE_WEBPASS:-local}
     networks:
       - back
-      - monitoring_logging    
+#      - monitoring_logging    
 
 networks:
   reverse-proxy:

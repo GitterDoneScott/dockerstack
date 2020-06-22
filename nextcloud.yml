@@ -14,7 +14,7 @@ services:
     networks:
       - nextcloud_back
     labels:
-      container_group: nextcloud
+      - "container_group=nextcloud"
 
   nextcloud:
     image: nextcloud:18-apache
@@ -44,8 +44,15 @@ services:
       - MYSQL_USER=${NEXTCLOUD_MYSQL_USER:-SUBFAIL}
       - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD:-SUBFAIL}
       - MYSQL_HOST=nextcloud_db
+
     labels:
-      container_group: nextcloud
+      - "container_group=nextcloud"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.nextcloud.tls.certresolver=myresolver"
+      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+
 
 volumes:
   nextcloud_config:
