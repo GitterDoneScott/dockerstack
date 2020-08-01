@@ -2,7 +2,7 @@ version: "3"
 
 services:
   guacamole:
-    image: guacamole/guacamole:1.0.0
+    image: guacamole/guacamole:1.2.0
     depends_on:
       - guacd
       - mysql-guac
@@ -51,7 +51,7 @@ services:
       container_group: guacamole
 
   guacd:
-    image: guacamole/guacd:1.0.0
+    image: guacamole/guacd:1.2.0
     restart: always
     networks:
       - guac_back
@@ -69,13 +69,13 @@ volumes:
   guacamole:
     driver: "local"
     driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/guacamole.1.0"
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/guacamole.1.2"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
   guac_mysql:
     driver: "local"
     driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/guacamole-mysql.1.0"
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/guacamole-mysql.1.2"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
