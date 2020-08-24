@@ -1,0 +1,40 @@
+version: "3.3"
+services:
+    #test internal ip no auth vs external basic
+    whoami:
+    image: "containous/whoami"
+    container_name: "simple-service"
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.whoami2.tls.certresolver=myresolver"
+      - "traefik.http.routers.whoami2.rule=Host(`whoami.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
+      - "traefik.http.routers.whoami2.priority=100"
+#      - "traefik.http.routers.whoami2.middlewares=bypassauth"
+      - "traefik.http.routers.whoami2.entrypoints=websecure"
+
+      - "traefik.http.routers.whoami.rule=Host(`whoami.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.whoami.priority=90"
+      - "traefik.http.routers.whoami.middlewares=myauth"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver"
+
+
+  #test google oauth
+  whoami3:
+    image: "containous/whoami"
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      
+      - "traefik.http.routers.whoami3.middlewares=middlewares-secured-oauth" 
+      - "traefik.http.routers.whoami3.rule=Host(`whoami3.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.whoami3.entrypoints=websecure"
+      - "traefik.http.routers.whoami3.tls.certresolver=myresolver"
+          
+networks:
+  reverse-proxy:
+    external: true

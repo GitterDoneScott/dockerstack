@@ -5,8 +5,9 @@ services:
   traefik:
     image: "traefik:v2.2"
     container_name: "traefik"
+    restart: unless-stopped
     command:
-      - "--log.level=DEBUG"
+      - "--log.level=WARN"
      #- "--api.insecure=true"
       - "--api=true"
       - "--api.dashboard=true"
@@ -36,20 +37,10 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-      # internal route for internal ips
-      - "traefik.http.routers.traefik2.service=api@internal"
-      - "traefik.http.routers.traefik2.tls=true"
-      - "traefik.http.routers.traefik2.tls.certresolver=myresolver"
-      - "traefik.http.routers.traefik2.rule=Host(`traefik.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
-      - "traefik.http.routers.traefik2.priority=100"
- #     - "traefik.http.routers.traefik2.middlewares=bypassauth"
-      - "traefik.http.routers.traefik2.entrypoints=websecure"
-      # default route for external basic auth
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.traefik.priority=90"
-      - "traefik.http.routers.traefik.middlewares=myauth"
+      - "traefik.http.routers.traefik.middlewares=middlewares-secured-oauth"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=myresolver"
       
@@ -58,30 +49,16 @@ services:
       - "traefik.http.middlewares.bypassauth.chain.middlewares="
       #- "traefik.http.middlewares.auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/" #test/test
       - "traefik.http.middlewares.auth.basicauth.users=${DEFAULT_USER:-SUBFAIL}"
+      #google oauth middleware
+      - "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-oauth"
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.address=http://oauth:4181"
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.authResponseHeaders=X-Forwarded-User"
+
 
     volumes:
       - "traefik-certs:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
-  whoami:
-    image: "containous/whoami"
-    container_name: "simple-service"
-    networks:
-      - reverse-proxy
-    labels:
-      - "traefik.enable=true"
-
-      - "traefik.http.routers.whoami2.tls.certresolver=myresolver"
-      - "traefik.http.routers.whoami2.rule=Host(`whoami.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
-      - "traefik.http.routers.whoami2.priority=100"
-#      - "traefik.http.routers.whoami2.middlewares=bypassauth"
-      - "traefik.http.routers.whoami2.entrypoints=websecure"
-
-      - "traefik.http.routers.whoami.rule=Host(`whoami.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.whoami.priority=90"
-      - "traefik.http.routers.whoami.middlewares=myauth"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=myresolver"
           
 networks:
   reverse-proxy:

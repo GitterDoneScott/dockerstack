@@ -37,18 +37,9 @@ services:
       - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
       - "traefik.http.services.syncthing.loadbalancer.server.port=8384" #needed if multiple ports are exposed
 
-      # internal route for internal ips
-      - "traefik.http.routers.syncthing2.tls=true"
-      - "traefik.http.routers.syncthing2.tls.certresolver=myresolver"
-      - "traefik.http.routers.syncthing2.rule=Host(`syncthing.${DNS_SUFFIX:-local}`) && HeadersRegexp(`X-Real-Ip`, `${TRAEFIK_INTERNAL_IPS:-SUBFAIL}`)"
-      - "traefik.http.routers.syncthing2.priority=100"
-      - "traefik.http.routers.syncthing2.middlewares=bypassauth"
-      - "traefik.http.routers.syncthing2.entrypoints=websecure"
-      # default route for external basic auth
       - "traefik.http.routers.syncthing.tls=true"
       - "traefik.http.routers.syncthing.rule=Host(`syncthing.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.syncthing.priority=90"
-      - "traefik.http.routers.syncthing.middlewares=myauth"
+      - "traefik.http.routers.syncthing.middlewares=middlewares-secured-oauth"
       - "traefik.http.routers.syncthing.entrypoints=websecure"
       - "traefik.http.routers.syncthing.tls.certresolver=myresolver"
 
