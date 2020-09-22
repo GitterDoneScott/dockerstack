@@ -66,16 +66,16 @@ services:
 
 
 
-  pihole-exporter:
-    image: ekofr/pihole-exporter:latest
-    restart: always
-    ports:
-      - 9311:9311/tcp
-    environment:
-      - PIHOLE_HOSTNAME=pihole
-      - PIHOLE_PASSWORD=${PIHOLE_WEBPASS:-local}
-    networks:
-      - reverse-proxy
+#  pihole-exporter:
+#    image: ekofr/pihole-exporter:latest
+#    restart: always
+#    ports:
+#      - 9311:9311/tcp
+#    environment:
+#      - PIHOLE_HOSTNAME=pihole
+#      - PIHOLE_PASSWORD=${PIHOLE_WEBPASS:-local}
+#    networks:
+#      - reverse-proxy
 #      - monitoring_logging    
 
 networks:

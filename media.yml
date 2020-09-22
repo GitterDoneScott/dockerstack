@@ -52,6 +52,40 @@ services:
       - "traefik.http.routers.radarr.entrypoints=websecure"
       - "traefik.http.routers.radarr.tls.certresolver=myresolver"
 
+  lidarr:
+    image: "linuxserver/lidarr:latest"
+    restart: unless-stopped
+    expose:
+     - "8686"
+    volumes:
+     - lidarr_config:/config
+     - lidarr_downloads:/data/complete/lidarr
+     - lidarr_music:/music
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=lidarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=lidarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.lidarr.loadbalancer.server.port=8686" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.lidarr.tls=true"
+      - "traefik.http.routers.lidarr.rule=Host(`lidarr.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.lidarr.priority=90"
+      - "traefik.http.routers.lidarr.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr.tls.certresolver=myresolver"
+
+
   jackett:
     image: "linuxserver/jackett:latest"
     restart: unless-stopped
@@ -62,7 +96,7 @@ services:
      - jackett_downloads:/downloads
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
-      - PUID=0
+      - PUID=1001
       - PGID=1001
       - VIRTUAL_HOST=jackett.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=jackett.${DNS_SUFFIX:-local}
@@ -149,6 +183,33 @@ services:
       - "traefik.http.routers.sonarr.middlewares=middlewares-secured-oauth"
       - "traefik.http.routers.sonarr.entrypoints=websecure"
       - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
+
+  htpcmanager:
+    image: "linuxserver/htpcmanager:latest"
+    restart: unless-stopped
+    expose:
+     - "8085"
+    volumes:
+     - htpcmanager_config:/config
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.htpcmanager.loadbalancer.server.port=8085" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.htpcmanager.tls=true"
+      - "traefik.http.routers.htpcmanager.rule=Host(`htpc.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.htpcmanager.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.htpcmanager.entrypoints=websecure"
+      - "traefik.http.routers.htpcmanager.tls.certresolver=myresolver"
 
 
   librarian:
@@ -261,6 +322,12 @@ volumes:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/ombi"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+  htpcmanager_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/htpcmanager"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
   radarr_config:
     driver: "local"
     driver_opts:
@@ -281,6 +348,28 @@ volumes:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video/Movies"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+
+  lidarr_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/lidarr"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  lidarr_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/lidarr"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  lidarr_music:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/music"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
 
   jackett_config:
     driver: "local"

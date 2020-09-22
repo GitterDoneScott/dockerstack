@@ -1,5 +1,31 @@
 version: "3"
 services:
+  heimdall:
+    image: linuxserver/heimdall
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+    volumes:
+      - heimdall_config:/config
+    expose:
+      - 80
+    restart: unless-stopped 
+    networks:
+      - reverse-proxy
+    labels:
+      - "container_group=home"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.heimdall.loadbalancer.server.port=80" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.heimdall.tls=true"
+      - "traefik.http.routers.heimdall.rule=Host(`dashboard.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.heimdall.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.heimdall.entrypoints=websecure"
+      - "traefik.http.routers.heimdall.tls.certresolver=myresolver"
+ 
 #  grafana:
 #    image: grafana/grafana
 #    depends_on:
@@ -27,24 +53,24 @@ services:
 #        gelf-address: ${GELF_ADDRESS:-SUBFAIL}
 #        labels: container_group
 
-  influxdb:
-    image: influxdb
-    restart: always
-    command: -config /etc/influxdb/influxdb.conf
-    ports:
-      - "8086:8086/tcp"
-      - "2003:2003/tcp"
-      - "8083:8083/tcp"
-    volumes:
-      - influxdb_conf:/etc/influxdb
-      - influxdb:/var/lib/influxdb
-    networks:
-      - back
-    environment:
-      - INFLUXDB_ADMIN_ENABLED=true
-      - INFLUXDB_GRAPHITE_ENABLED=true
-    labels:
-      container_group: monitoring
+  # influxdb:
+  #   image: influxdb
+  #   restart: unless-stopped
+  #   command: -config /etc/influxdb/influxdb.conf
+  #   ports:
+  #     - "8086:8086/tcp"
+  #     - "2003:2003/tcp"
+  #     - "8083:8083/tcp"
+  #   volumes:
+  #     - influxdb_conf:/etc/influxdb
+  #     - influxdb:/var/lib/influxdb
+  #   networks:
+  #     - back
+  #   environment:
+  #     - INFLUXDB_ADMIN_ENABLED=true
+  #     - INFLUXDB_GRAPHITE_ENABLED=true
+  #   labels:
+  #     container_group: monitoring
 
 #  cadvisor:
 #    image: google/cadvisor
@@ -66,38 +92,45 @@ networks:
   reverse-proxy:
     external:
       name: reverse-proxy
-  back:
-    driver: bridge
-  monitoring_logging:
-    external:
-      name: monitoring_logging
+  # back:
+  #   driver: bridge
+  # monitoring_logging:
+  #   external:
+  #     name: monitoring_logging
 
 volumes:
-  grafana_storage:
+  # grafana_storage:
+  #   driver: "local"
+  #   driver_opts:
+  #     device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grafana/storage"
+  #     type: ${VOL_TYPE:-SUBFAIL}
+  #     o: ${VOL_OPS:-SUBFAIL}
+
+  # grafana_config:
+  #   driver: "local"
+  #   driver_opts:
+  #     device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grafana/config"
+  #     type: ${VOL_TYPE:-SUBFAIL}
+  #     o: ${VOL_OPS:-SUBFAIL}
+  
+  heimdall_config:
     driver: "local"
     driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grafana/storage"
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/heimdall"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
-  grafana_config:
-    driver: "local"
-    driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grafana/config"
-      type: ${VOL_TYPE:-SUBFAIL}
-      o: ${VOL_OPS:-SUBFAIL}
+  # influxdb:
+  #   driver: "local"
+  #   driver_opts:
+  #     device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/influxdb/db"
+  #     type: ${VOL_TYPE:-SUBFAIL}
+  #     o: ${VOL_OPS:-SUBFAIL}
 
-  influxdb:
-    driver: "local"
-    driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/influxdb/db"
-      type: ${VOL_TYPE:-SUBFAIL}
-      o: ${VOL_OPS:-SUBFAIL}
-
-  influxdb_conf:
-    driver: "local"
-    driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/influxdb/conf"
-      type: ${VOL_TYPE:-SUBFAIL}
-      o: ${VOL_OPS:-SUBFAIL}
+  # influxdb_conf:
+  #   driver: "local"
+  #   driver_opts:
+  #     device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/influxdb/conf"
+  #     type: ${VOL_TYPE:-SUBFAIL}
+  #     o: ${VOL_OPS:-SUBFAIL}
 
