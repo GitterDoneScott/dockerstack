@@ -1,0 +1,9 @@
+version: "2.1"
+services:
+  classifiedscraper:
+    image: "gitterdone/classifiedscraper:latest"
+    restart: unless-stopped
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - SCRAPY_DISCORD_NOTIFICATION_URL=${SCRAPY_DISCORD_NOTIFICATION_URL:-SUBFAIL}
+
