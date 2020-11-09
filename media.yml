@@ -20,7 +20,7 @@ services:
 #      container_group: plex
 
   radarr:
-    image: "linuxserver/radarr:preview"
+    image: "linuxserver/radarr:latest"
     restart: unless-stopped
     expose:
      - "7878"
@@ -39,7 +39,52 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.radarr.tls=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.radarr.priority=90"
+      - "traefik.http.routers.radarr.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=myresolver"
+
+  lidarr:
+    image: "linuxserver/lidarr:latest"
+    restart: unless-stopped
+    expose:
+     - "8686"
+    volumes:
+     - lidarr_config:/config
+     - lidarr_downloads:/data/complete/lidarr
+     - lidarr_music:/music
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=0
+      - PGID=1001
+      - VIRTUAL_HOST=lidarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=lidarr.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.lidarr.loadbalancer.server.port=8686" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.lidarr.tls=true"
+      - "traefik.http.routers.lidarr.rule=Host(`lidarr.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.lidarr.priority=90"
+      - "traefik.http.routers.lidarr.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr.tls.certresolver=myresolver"
+
 
   jackett:
     image: "linuxserver/jackett:latest"
@@ -51,7 +96,7 @@ services:
      - jackett_downloads:/downloads
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
-      - PUID=0
+      - PUID=1001
       - PGID=1001
       - VIRTUAL_HOST=jackett.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=jackett.${DNS_SUFFIX:-local}
@@ -60,7 +105,18 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.jackett.loadbalancer.server.port=9117" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.jackett.tls=true"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.jackett.priority=90"
+      - "traefik.http.routers.jackett.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.jackett.entrypoints=websecure"
+      - "traefik.http.routers.jackett.tls.certresolver=myresolver"
 
   headphones:
     image: "linuxserver/headphones:latest"
@@ -82,10 +138,21 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.headphones.loadbalancer.server.port=8181" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.headphones.tls=true"
+      - "traefik.http.routers.headphones.rule=Host(`headphones.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.headphones.priority=90"
+      - "traefik.http.routers.headphones.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.headphones.entrypoints=websecure"
+      - "traefik.http.routers.headphones.tls.certresolver=myresolver"
 
   sonarr:
-    image: "linuxserver/sonarr:preview"
+    image: "linuxserver/sonarr:latest"
     restart: unless-stopped
     expose:
      - "8989"
@@ -104,7 +171,46 @@ services:
       - back
       - reverse-proxy
     labels:
-      container_group: plex
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.sonarr.tls=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.sonarr.priority=90"
+      - "traefik.http.routers.sonarr.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
+
+  htpcmanager:
+    image: "linuxserver/htpcmanager:latest"
+    restart: unless-stopped
+    expose:
+     - "8085"
+    volumes:
+     - htpcmanager_config:/config
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+    networks:
+      - back
+      - reverse-proxy
+    labels:
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.htpcmanager.loadbalancer.server.port=8085" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.htpcmanager.tls=true"
+      - "traefik.http.routers.htpcmanager.rule=Host(`htpc.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.htpcmanager.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.htpcmanager.entrypoints=websecure"
+      - "traefik.http.routers.htpcmanager.tls.certresolver=myresolver"
+
 
   librarian:
     image: "linuxserver/lazylibrarian:latest"
@@ -131,7 +237,76 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: library
+      - "container_group=media"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.librarian.loadbalancer.server.port=5299" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.librarian.tls=true"
+      - "traefik.http.routers.librarian.rule=Host(`librarian.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.librarian.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.librarian.entrypoints=websecure"
+      - "traefik.http.routers.librarian.tls.certresolver=myresolver"
+
+  transmission:
+    image: "haugene/transmission-openvpn"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    ports:
+     - "9999:9999" #web proxy
+    expose:
+     - "9091"
+    dns:
+     - 8.8.8.8
+    volumes:
+     - transmission_completed_downloads:/data/complete
+     - transmission_watch:/data/watch
+     - transmission_incomplete_downloads:/data/incomplete
+    environment:
+      - OPENVPN_PROVIDER=${VPN_OPENVPN_PROVIDER:-SUBFAIL}
+      - OPENVPN_CONFIG=${VPN_OPENVPN_CONFIG:-SUBFAIL}
+      - OPENVPN_USERNAME=${VPN_OPENVPN_USERNAME:-SUBFAIL}
+      - OPENVPN_PASSWORD=${VPN_OPENVPN_PASSWORD:-SUBFAIL}
+      - OPENVPN_OPTS=--pull-filter ignore ping
+#      - CREATE_TUN_DEVICE=true
+      - DROP_DEFAULT_ROUTE=true
+      - TRANSMISSION_UMASK=0
+      - TRANSMISSION_DOWNLOAD_DIR=/data/complete
+      - TRANSMISSION_WATCH_DIR=/data/watch
+      - TRANSMISSION_WATCH_DIR_ENABLED=true
+      - TRANSMISSION_SPEED_LIMIT_UP_ENABLED=true
+      - TRANSMISSION_SPEED_LIMIT_UP=50
+      - TRANSMISSION_DOWNLOAD_QUEUE_SIZE=3
+      - TRANSMISSION_DOWNLOAD_QUEUE_ENABLED=true
+      - TRANSMISSION_RATIO_LIMIT_ENABLED=true
+      - TRANSMISSION_RATIO_LIMIT=1
+      - TRANSMISSION_SPEED_LIMIT_DOWN_ENABLED=false
+      - TRANSMISSION_SPEED_LIMIT_DOWN=100
+      - WEBPROXY_ENABLED=false
+      - WEBPROXY_PORT=9999
+      - TZ=${MY_TZ:-SUBFAIL}
+      - VIRTUAL_PORT=9091
+      - VIRTUAL_HOST=transmission.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=transmission.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+      - TRANSMISSION_INCOMPLETE_DIR=/data/incomplete
+      - TRANSMISSION_INCOMPLETE_DIR_ENABLED=true
+    networks:
+      - reverse-proxy
+    labels:
+      - "container_group=media"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091" #needed if multiple ports are exposed
+      - "traefik.http.routers.transmission.tls=true"
+      - "traefik.http.routers.transmission.rule=Host(`transmission.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.transmission.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.transmission.entrypoints=websecure"
+      - "traefik.http.routers.transmission.tls.certresolver=myresolver"
 
 networks:
   reverse-proxy:
@@ -145,6 +320,12 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/ombi"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  htpcmanager_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/htpcmanager"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
   radarr_config:
@@ -167,6 +348,28 @@ volumes:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/video/Movies"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+
+  lidarr_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/lidarr"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  lidarr_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/lidarr"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  lidarr_music:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/music"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
 
   jackett_config:
     driver: "local"
@@ -256,6 +459,25 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Audio\ books"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  
+  transmission_completed_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  transmission_incomplete_downloads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!incomplete"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  transmission_watch:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!watch"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 

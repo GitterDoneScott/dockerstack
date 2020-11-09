@@ -2,7 +2,7 @@ version: '3'
 services:
   tautulli:
     image: "tautulli/tautulli:latest"
-    restart: always
+    restart: unless-stopped
     expose:
      - "8181"
     volumes:
@@ -15,7 +15,17 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: monitoring
+      - "container_group=plex"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.tautulli.loadbalancer.server.port=8181" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.tautulli.tls=true"
+      - "traefik.http.routers.tautulli.rule=Host(`tautulli.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.tautulli.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.tautulli.entrypoints=websecure"
+      - "traefik.http.routers.tautulli.tls.certresolver=myresolver"
 
 networks:
   reverse-proxy:

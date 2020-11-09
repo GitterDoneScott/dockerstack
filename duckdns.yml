@@ -1,0 +1,13 @@
+version: "2.1"
+services:
+  duckdns:
+    image: "linuxserver/duckdns:latest"
+    restart: unless-stopped
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+      - SUBDOMAINS=${DUCKDNS_DOMAINS:-SUBFAIL}
+      - TOKEN=${DUCKDNS_TOKEN:-SUBFAIL}
+    labels:
+      - "container_group=home"

@@ -6,7 +6,7 @@ services:
     depends_on:
       - guacd
       - mysql-guac
-    restart: always
+    restart: unless-stopped
 #    ports:
 #      - "8081:8080/tcp"
     expose:
@@ -27,8 +27,17 @@ services:
       - LETSENCRYPT_HOST=r.${DNS_SUFFIX:-local}
       - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     labels:
-      container_group: guacamole
+      - "container_group=guacamole"
 
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.guacamole.loadbalancer.server.port=8080" #needed if multiple ports are exposed
+      - "traefik.http.routers.guacamole.tls.certresolver=myresolver"
+      - "traefik.http.routers.guacamole.rule=Host(`r.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.guacamole.entrypoints=websecure"
+
+      - "traefik.http.routers.guacamole.middlewares=add-guacamole" 
+      - "traefik.http.middlewares.add-guacamole.addPrefix.prefix=/guacamole"
   mysql-guac:
     image: mysql/mysql-server:5.7.19-1.1.0
     restart: always

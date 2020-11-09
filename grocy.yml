@@ -1,0 +1,43 @@
+version: "2.1"
+services:
+  grocy:
+    image: "linuxserver/grocy:latest"
+    restart: unless-stopped
+    expose:
+     - "80"
+    volumes:
+     - grocy_config:/config
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+      - VIRTUAL_HOST=grocy.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=grocy.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      - "container_group=home"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.grocy.loadbalancer.server.port=80" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.grocy.tls=true"
+      - "traefik.http.routers.grocy.rule=Host(`grocy.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.grocy.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.grocy.entrypoints=websecure"
+      - "traefik.http.routers.grocy.tls.certresolver=myresolver"
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+
+volumes:
+  grocy_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/grocy"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

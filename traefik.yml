@@ -1,0 +1,167 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.2"
+    container_name: "traefik"
+    restart: unless-stopped
+    command:
+      - "--log.level=WARN"
+     #- "--api.insecure=true"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.openvpn_udp.address=:1194/udp"
+      - "--entrypoints.minecraft.address=:25565"
+      - "--entrypoints.dns.address=:53"
+      - "--entrypoints.dns_udp.address=:53/udp"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #- "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=web"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=${LETS_ENC_EMAIL:-SUBFAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"  
+      - "443:443"
+      - "53:53/tcp" #pihole dns
+      - "53:53/udp"  #pihole dns udp
+      - "1194:1194/udp"  #openvpn
+      - "25565:25565/tcp" #minecraft
+ #     - "8080:8080"
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.traefik.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      
+      #middlewares are reusable
+      - "traefik.http.middlewares.myauth.chain.middlewares=auth"
+      - "traefik.http.middlewares.bypassauth.chain.middlewares="
+      #- "traefik.http.middlewares.auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/" #test/test
+      - "traefik.http.middlewares.auth.basicauth.users=${DEFAULT_USER:-SUBFAIL}"
+      #google oauth middleware
+      - "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-oauth"
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.address=http://oauth:4181"
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.authResponseHeaders=X-Forwarded-User"
+
+      #authelia middleware
+      #- "traefik.http.routers.authelia-rtr.middlewares=chain-authelia"
+      - "traefik.http.middlewares.middlewares-secured-authelia.chain.middlewares=middlewares-authelia"
+      - "traefik.http.middlewares.middlewares-authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.${DNS_SUFFIX:-local}/"
+      - "traefik.http.middlewares.middlewares-authelia.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.middlewares-authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups"
+
+    volumes:
+      - "traefik-certs:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  # Google OAuth - Single Sign On using OAuth 2.0 for Traefik 2.2
+  oauth:
+    container_name: oauth
+    image: thomseddon/traefik-forward-auth:latest
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - "CLIENT_ID=${GOOGLE_CLIENT_ID:-SUBFAIL}"
+      - "CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-SUBFAIL}"
+      - "SECRET=${OAUTH_SECRET:-SUBFAIL}"
+      - "COOKIE_DOMAIN=${DNS_SUFFIX:-local}"
+      - "INSECURE_COOKIE=false"
+      - "AUTH_HOST=oauth.${DNS_SUFFIX:-local}"
+      - "URL_PATH=/_oauth"
+      - "WHITELIST=$MY_EMAIL"
+      - "LOG_LEVEL=warn"
+      - "LOG_FORMAT=text"
+      - "LIFETIME=2592000" # 30 days
+      - "DEFAULT_ACTION=auth"
+      - "DEFAULT_PROVIDER=google"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.oauth-rtr.entrypoints=websecure"
+      - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.oauth-rtr.tls.certresolver=myresolver"
+      ## Middlewares
+      - "traefik.http.routers.oauth-rtr.middlewares=middlewares-secured-oauth"
+      ## HTTP Services
+      - "traefik.http.routers.oauth-rtr.service=oauth-svc"
+      - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181"
+
+       # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
+  authelia:
+    container_name: authelia
+    # Check this before upgrading: https://github.com/authelia/authelia/blob/master/BREAKING.md
+    # image: authelia/authelia:latest
+    image: authelia/authelia:4.21.0
+    restart: always
+    networks:
+      - reverse-proxy
+      - smtp
+    #depends_on:
+    #  - mariadb
+    #  - redis
+    volumes:
+      - authelia-config:/config
+    environment:
+      - TZ=$MY_TZ
+#      - AUTHELIA_JWT_SECRET_FILE=/run/secrets/authelia_jwt_secret
+#      - AUTHELIA_SESSION_SECRET_FILE=/run/secrets/authelia_session_secret
+#      - AUTHELIA_STORAGE_MYSQL_PASSWORD_FILE=/run/secrets/authelia_storage_mysql_password
+#      - AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=/run/secrets/authelia_notifier_smtp_password
+#      - AUTHELIA_DUO_API_SECRET_KEY_FILE=/run/secrets/authelia_duo_api_secret_key
+#    secrets:
+#      - authelia_jwt_secret
+#      - authelia_session_secret
+#      - authelia_storage_mysql_password
+#      - authelia_notifier_smtp_password
+#      - authelia_duo_api_secret_key
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.authelia-rtr.entrypoints=websecure"
+      - "traefik.http.routers.authelia-rtr.tls.certresolver=myresolver"
+      #- "traefik.http.routers.authelia-rtr.rule=HostHeader(`authelia.$DOMAINNAME`)"
+      - "traefik.http.routers.authelia-rtr.rule=Host(`authelia.${DNS_SUFFIX:-local}`)"
+      ## Middlewares
+      - "traefik.http.routers.authelia-rtr.middlewares=middlewares-secured-authelia"
+      ## HTTP Services
+      - "traefik.http.routers.authelia-rtr.service=authelia-svc"
+      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
+
+networks:
+  reverse-proxy:
+    external: true
+  smtp:
+    external: true
+      
+volumes:
+  traefik-certs:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/traefik/certs"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  authelia-config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/authelia"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+

@@ -31,7 +31,17 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: sync
+      - "container_group=sync"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.syncthing.loadbalancer.server.port=8384" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.syncthing.tls=true"
+      - "traefik.http.routers.syncthing.rule=Host(`syncthing.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.syncthing.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.syncthing.entrypoints=websecure"
+      - "traefik.http.routers.syncthing.tls.certresolver=myresolver"
 
 networks:
   reverse-proxy:

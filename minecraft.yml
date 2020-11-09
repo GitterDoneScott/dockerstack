@@ -1,4 +1,5 @@
 version: '2.2'
+
 services:
 #  minecraft1:
 #    ports:
@@ -18,11 +19,14 @@ services:
 #      container_group: minecraft
 
   minecraft2:
-    ports:
-      - "25566:25565"
+#    ports:
+#      - "25566:25565"
+    expose:
+      - "25565"
+
     image: itzg/minecraft-server
     container_name: minecraft2
-    restart: always
+    restart: unless-stopped
     volumes:
       - minecraft2_data:/data
     environment:
@@ -38,9 +42,25 @@ services:
       - MODE=creative
 #      - WORLD=
 #      - MODPACK=
+    networks:
+      - reverse-proxy
     labels:
-      container_group: minecraft
+      - "container_group=minecraft"
+
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
       
+      #tcp 
+      - "traefik.tcp.routers.minecraft2.entrypoints=minecraft"
+      - "traefik.tcp.routers.minecraft2.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.minecraft2.service=minecraft2"
+      - "traefik.tcp.routers.minecraft2.tls=false"
+      - "traefik.tcp.services.minecraft2.loadbalancer.server.port=25565"
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+
 volumes:
   minecraft1_data:
     driver: "local"

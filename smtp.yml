@@ -3,7 +3,7 @@ version: "2.2"
 services:
   smtp:
     image: namshi/smtp
-    restart: always
+    restart: unless-stopped
     ports:
       - "25:25"
     environment:

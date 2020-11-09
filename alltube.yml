@@ -2,7 +2,7 @@ version: '3' # version of docker-compose to use
 services:
   alltube:
     image: rudloff/alltube:latest
-    restart: always
+    restart: unless-stopped
     expose:
       - 80
     environment:
@@ -13,8 +13,17 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: youtube
+      - "container_group=youtube"
+      - "traefik.enable=true"
 
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.alltube.loadbalancer.server.port=8384" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.alltube.tls=true"
+      - "traefik.http.routers.alltube.rule=Host(`alltube.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.alltube.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.alltube.entrypoints=websecure"
+      - "traefik.http.routers.alltube.tls.certresolver=myresolver"
   youtube-dl:
     image: gitterdone/youtube-dl-webui:latest
     restart: always
@@ -31,7 +40,17 @@ services:
     networks:
       - reverse-proxy
     labels:
-      container_group: youtube
+      - "container_group=youtube"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.youtubedl.loadbalancer.server.port=8384" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.youtubedl.tls=true"
+      - "traefik.http.routers.youtubedl.rule=Host(`youtubedl.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.youtubedl.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.youtubedl.entrypoints=websecure"
+      - "traefik.http.routers.youtubedl.tls.certresolver=myresolver"
 
 volumes:
   youtube_video:

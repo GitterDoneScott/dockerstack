@@ -2,6 +2,7 @@ version: "3"
 services:
   smokeping:
     image: linuxserver/smokeping
+    restart: unless-stopped
     container_name: smokeping
     environment:
       - PUID=1001

@@ -1,0 +1,41 @@
+version: "2.1"
+services:
+  code-server:
+    image: "linuxserver/code-server:latest"
+    restart: unless-stopped
+    expose:
+     - 8443
+    volumes:
+     - codeserver_config:/config
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+      - PROXY_DOMAIN=code.${DNS_SUFFIX:-local}
+    networks:
+      - reverse-proxy
+    labels:
+      - "container_group=dev"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.codeserver.loadbalancer.server.port=8443" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.codeserver.tls=true"
+      - "traefik.http.routers.codeserver.rule=Host(`code.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.codeserver.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.codeserver.entrypoints=websecure"
+      - "traefik.http.routers.codeserver.tls.certresolver=myresolver"
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+
+volumes:
+  codeserver_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/codeserver"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
