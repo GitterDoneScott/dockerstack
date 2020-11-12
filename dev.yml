@@ -27,6 +27,30 @@ services:
       - "traefik.http.routers.codeserver.entrypoints=websecure"
       - "traefik.http.routers.codeserver.tls.certresolver=myresolver"
 
+  jupyter:
+    image: "jupyter/datascience-notebook:latest"
+    restart: unless-stopped
+    expose:
+     - 8888
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      - PUID=1001
+      - PGID=1001
+      - JUPYTER_ENABLE_LAB=yes
+    networks:
+      - reverse-proxy
+    labels:
+      - "container_group=dev"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.juptyer.loadbalancer.server.port=8888" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.juptyer.tls=true"
+      - "traefik.http.routers.juptyer.rule=Host(`juptyer.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.juptyer.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.juptyer.entrypoints=websecure"
+      - "traefik.http.routers.juptyer.tls.certresolver=myresolver"
+
 networks:
   reverse-proxy:
     external:
