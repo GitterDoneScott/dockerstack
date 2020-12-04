@@ -1,0 +1,59 @@
+version: "3"
+
+services:
+  clarkson:
+    image: linuxserver/clarkson
+    depends_on:
+      - mysql-clarkson
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - reverse-proxy
+      - back
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_HOST=mysql-clarkson
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=mysqlroot
+      - ENABLE_REGISTRATIONS=true
+      - TZ=${MY_TZ:-SUBFAIL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.clarkson.loadbalancer.server.port=3000" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.clarkson.tls=true"
+      - "traefik.http.routers.clarkson.rule=Host(`miles.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.clarkson.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.clarkson.entrypoints=websecure"
+      - "traefik.http.routers.clarkson.tls.certresolver=myresolver"
+
+
+  mysql-clarkson:
+    image: mysql/mysql-server:5.7.19-1.1.0
+    restart: unless-stopped
+    volumes:
+      - clarkson_mysql:/var/lib/mysql
+    networks:
+      - back
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysqlroot
+      - MYSQL_ROOT_HOST=%
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  back:
+    driver: bridge
+
+volumes:
+
+  clarkson_mysql:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/clarkson/db"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

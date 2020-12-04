@@ -8,6 +8,7 @@ services:
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
       - SCRAPY_DISCORD_NOTIFICATION_URL=${SCRAPY_DISCORD_NOTIFICATION_URL:-SUBFAIL}
+      - EBAY_APP_ID=${EBAY_APP_ID:-SUBFAIL}
     labels:
       - "com.centurylinklabs.watchtower.scope=mydev"
 
@@ -17,11 +18,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 30 --scope mydev
     environment:
-      - WATCHTOWER_POLL_INTERVAL=1200
+      - WATCHTOWER_POLL_INTERVAL=900
       - WATCHTOWER_NOTIFICATIONS=slack
       - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=${WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL:-SUBFAIL}
-    labels:
-      - "com.centurylinklabs.watchtower.scope=mydev"
   
 volumes:
   classified_data:
