@@ -54,6 +54,13 @@ volumes:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/plex/config"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+  plex_config_local:
+    driver: "local"
+    driver_opts:
+      device: "/mnt/plex_config"
+      type: none
+      o: bind
+
   plex_transcode:
     driver: "local"
     driver_opts:
