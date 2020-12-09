@@ -1,0 +1,26 @@
+version: '2.2'
+services:
+  rsync:
+    image: dkruger/rsync-cron:latest
+    restart: unless-stopped
+    volumes:
+     - plex_config:/rsync_dst
+     - plex_config_local:/rsync_src
+    environment:
+     - RSYNC_OPTIONS="-av"
+    labels:
+      - "container_group=plex"
+
+volumes:
+  plex_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/plex/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  plex_config_local:
+    driver: "local"
+    driver_opts:
+      device: "/opt/plex_config_local"
+      type: none
+      o: bind

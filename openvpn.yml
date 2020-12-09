@@ -76,7 +76,7 @@ services:
       - 127.0.0.1
       - 1.1.1.1
     environment:
-      TZ: 'America/Chicago'
+      TZ: ${MY_TZ:-SUBFAIL}
 #      - WEBPASSWORD=${PIHOLE_WEBPASS:-SUBFAIL}
     networks:
       pihole_sub:

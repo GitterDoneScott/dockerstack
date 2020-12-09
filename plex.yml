@@ -9,7 +9,10 @@ services:
     expose:
      - 32400
     volumes:
-     - plex_config:/config
+#     - plex_config:/config
+     - plex_config_local:/config
+     - plex_config:/mnt/plex_config_remote
+     - plex_config_local:/mnt/plex_config_local
      - /tmp:/transcode #transcoode to memory
 #     - plex_transcode:/transcode
      - audiobooks:/mnt/audiobooks
@@ -57,7 +60,7 @@ volumes:
   plex_config_local:
     driver: "local"
     driver_opts:
-      device: "/mnt/plex_config"
+      device: "/opt/plex_config_local"
       type: none
       o: bind
 

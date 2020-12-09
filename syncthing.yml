@@ -108,3 +108,4 @@ volumes:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/bitwarden"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+      
