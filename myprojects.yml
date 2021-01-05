@@ -7,7 +7,7 @@ services:
       - classified_data:/usr/src/app/data
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
-      - SCRAPY_DISCORD_NOTIFICATION_URL=${SCRAPY_DISCORD_NOTIFICATION_URL:-SUBFAIL}
+      - CLASSIFIEDSCRAPER_DISCORD_NOTIFICATION_URL=${SCRAPY_DISCORD_NOTIFICATION_URL:-SUBFAIL}
       - EBAY_APP_ID=${EBAY_APP_ID:-SUBFAIL}
     labels:
       - "com.centurylinklabs.watchtower.scope=mydev"
