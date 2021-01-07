@@ -15,6 +15,7 @@ services:
       - "LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}"
     networks:
       - reverse-proxy
+      - smtp
     labels:
       - "container_group=media"
       - "traefik.enable=true"
@@ -26,6 +27,9 @@ services:
 networks:
   reverse-proxy:
     external: true
+  smtp:
+    external:
+      name: smtp
 
 volumes:
   calibre-web:
