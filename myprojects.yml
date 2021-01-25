@@ -11,6 +11,12 @@ services:
       - EBAY_APP_ID=${EBAY_APP_ID:-SUBFAIL}
     labels:
       - "com.centurylinklabs.watchtower.scope=mydev"
+  
+  splash:
+    image: "scrapinghub/splash:latest"
+    restart: unless-stopped
+    expose:
+      - 8050
 
   watchtower:
     image: containrrr/watchtower
