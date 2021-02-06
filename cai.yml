@@ -1,0 +1,91 @@
+version: '2.1'
+
+services:
+
+
+  cai_drupal:
+    image: drupal:7.78-apache #7.78-apache #7.56-apache
+#    ports:
+#      - 9009:80
+    expose:
+      - 80
+    depends_on:
+      - cai_drupal_db
+    volumes:
+      - cai_drupal_sites:/var/www/html/sites
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+      - cai-back
+    environment:
+      - VIRTUAL_HOST=www.${DNS_SUFFIX:-local},${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=www.${DNS_SUFFIX:-local},${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.routers.caiweb.tls=true"
+      - "traefik.http.routers.caiweb.rule=Host(`www.${DNS_SUFFIX:-local}`) || Host(`${DNS_SUFFIX:-local}`)"
+#      - "traefik.http.routers.caiweb.rule=Host(`cai.${DNS_SUFFIX:-local}`)" #local testing
+      - "traefik.http.routers.caiweb.entrypoints=websecure"
+      - "traefik.http.routers.caiweb.tls.certresolver=myresolver"
+
+ 
+  cai_drupal_db:
+    image: mysql:5.7
+    restart: unless-stopped
+    volumes: # data to map to the container
+      - cai_mysql_init:/docker-entrypoint-initdb.d # initialize mysql data from export
+      - cai_mysql:/var/lib/mysql #mysql data
+    networks:
+      - cai-back
+    environment:
+      - MYSQL_ROOT_PASSWORD=${CAI_MYSQL_ROOT_PASSWORD:-SUBFAIL}
+      - MYSQL_DATABASE=${CAI_MYSQL_DATABASE:-SUBFAIL}
+      - MYSQL_USER=${CAI_MYSQL_USER:-SUBFAIL}
+      - MYSQL_PASSWORD=${CAI_MYSQL_PASSWORD:-SUBFAIL}
+      - MYSQL_ROOT_HOST=%
+
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   container_name: phpmyadmin
+  #   environment:
+  #    #- PMA_ARBITRARY=1
+  #     - PMA_HOST=cai_drupal_db
+  #   restart: "no"
+  #   ports:
+  #    - 9019:80
+  #   volumes:
+  #    - /sessions
+  #   networks:
+  #     - cai-back
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  cai-back:
+    driver: bridge
+
+volumes:
+  cai_mysql:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/cai/mysql"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  cai_mysql_init:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/cai/mysql_init"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  cai_drupal_sites:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/cai/drupal/sites"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+ 

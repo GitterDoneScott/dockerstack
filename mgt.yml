@@ -1,0 +1,95 @@
+version: '3' # version of docker-compose to use
+services: # configuring each container
+  mgt_db: 
+    image: mysql:5.7 
+    volumes: # data to map to the container
+      - mgt_mysql_init:/docker-entrypoint-initdb.d # initialize mysql data from export
+      - mgt_mysql:/var/lib/mysql #mysql data
+    expose:
+      - 3306
+    restart: unless-stopped 
+    environment: # environment variables -- mysql options in this case
+      MYSQL_ROOT_PASSWORD: ${MGT_MYSQL_ROOT_PASSWORD:-SUBFAIL}
+      MYSQL_DATABASE: ${MGT_MYSQL_DATABASE:-SUBFAIL}
+      MYSQL_USER: ${MGT_MYSQL_USER:-SUBFAIL}
+      MYSQL_PASSWORD: ${MGT_MYSQL_PASSWORD:-SUBFAIL}
+    networks:
+      - wordpress-network
+
+  mgt_wordpress: # name of our wordpress container
+    depends_on: # container dependencies that need to be running first
+      - mgt_db
+    image: wordpress:4.9.1-apache
+    expose:
+      - 80 
+    restart: unless-stopped
+    environment:
+      - WORDPRESS_DB_HOST=mgt_db:3306 # default mysql port
+      - WORDPRESS_DB_PASSWORD=${MGT_MYSQL_PASSWORD:-SUBFAIL} # matches the password set in the db container
+      - WORDPRESS_DB_NAME=${MGT_MYSQL_DATABASE:-SUBFAIL}
+      - WORDPRESS_DB_USER=${MGT_MYSQL_USER:-SUBFAIL}
+      - WORDPRESS_TABLE_PREFIX=wp_to8zuf_
+      - VIRTUAL_HOST=www.${DNS_SUFFIX:-local},${DNS_SUFFIX:-local}
+      - LETSENCRYPT_HOST=www.${DNS_SUFFIX:-local},${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.routers.mgt.tls=true"
+      - "traefik.http.routers.mgt.rule=Host(`www.${DNS_SUFFIX:-local}`) || Host(`${DNS_SUFFIX:-local}`)"
+#      - "traefik.http.routers.mgt.rule=Host(`mgt.${DNS_SUFFIX:-local}`)" #local testing
+      - "traefik.http.routers.mgt.entrypoints=websecure"
+      - "traefik.http.routers.mgt.tls.certresolver=myresolver"
+    volumes: 
+      - mgt_themes:/var/www/html/wp-content/themes # mapping our themes to the container
+      - mgt_plugins:/var/www/html/wp-content/plugins # map our plugins to the container
+      - mgt_uploads:/var/www/html/wp-content/uploads # map our uploads to the container
+#      - /opt/mgt:/var/www/html
+#      - ./php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+#      - /opt/mgt/wp-config.php:/var/www/html/wp-config.php
+    networks:
+      - wordpress-network
+      - reverse-proxy
+
+networks:
+  wordpress-network:
+    driver: bridge
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+
+volumes:
+  mgt_mysql:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/mgt/mysql"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  mgt_mysql_init:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/mgt/mysql_init"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  mgt_themes:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/mgt/wp-content/themes"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  mgt_plugins:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/mgt/wp-content/plugins"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+
+  mgt_uploads:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/mgt/wp-content/uploads"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
