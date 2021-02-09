@@ -229,7 +229,7 @@ services:
          nocopy: true
     environment:
       - TZ=${MY_TZ:-SUBFAIL}
-      - PUID=0
+      - PUID=1003
       - PGID=1001
       - VIRTUAL_HOST=librarian.${DNS_SUFFIX:-local}
       - LETSENCRYPT_HOST=librarian.${DNS_SUFFIX:-local}
@@ -248,6 +248,60 @@ services:
       - "traefik.http.routers.librarian.middlewares=middlewares-secured-oauth"
       - "traefik.http.routers.librarian.entrypoints=websecure"
       - "traefik.http.routers.librarian.tls.certresolver=myresolver"
+  
+  calibre-web:
+    image: linuxserver/calibre-web
+    restart: unless-stopped
+    expose:
+      - "8083"
+    environment:
+      - PUID=1003
+      - PGID=1001
+      - TZ=${MY_TZ:-SUBFAIL}
+    volumes:
+      - calibre-web:/config
+      - calibre_library:/books:nocopy
+    networks:
+      - reverse-proxy
+      - smtp
+    labels:
+      - "container_group=media"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.routers.library.tls.certresolver=myresolver"
+      - "traefik.http.routers.library.rule=Host(`library.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.library.entrypoints=websecure"
+
+  calibre:
+    image: linuxserver/calibre
+    environment:
+      - PUID=1003
+      - PGID=1001
+      - TZ=${MY_TZ:-SUBFAIL}
+#      - GUAC_USER=abc #optional
+#      - GUAC_PASS=900150983cd24fb0d6963f7d28e17f72 #optional
+      - UMASK_SET=022 #optional
+#      - CLI_ARGS= #optional
+    volumes:
+      - calibre_config:/config
+      - calibre_library:/library
+      - calibre_scratch:/import
+    networks:
+      - reverse-proxy
+      - smtp
+    # ports:
+    #   - 8080:8080
+    #   - 8081:8081
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.calibre.loadbalancer.server.port=8080" #needed if multiple ports are exposed
+      - "traefik.http.routers.calibre.tls=true"
+      - "traefik.http.routers.calibre.rule=Host(`calibre.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.calibre.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.calibre.entrypoints=websecure"
+      - "traefik.http.routers.calibre.tls.certresolver=myresolver"
 
   transmission:
     image: "haugene/transmission-openvpn"
@@ -312,6 +366,9 @@ networks:
   reverse-proxy:
     external:
       name: reverse-proxy
+  smtp:
+    external:
+      name: smtp
   back:
     driver: bridge
 
@@ -478,6 +535,30 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/scratch/!torrent/!watch"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  calibre-web:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/calibre-web"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  calibre_library:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Calibre\ Portable/Calibre\ Library"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  calibre_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/calibre"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  calibre_scratch:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/scratch/calibre_import"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
