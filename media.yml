@@ -32,9 +32,7 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=0
       - PGID=1001
-      - VIRTUAL_HOST=radarr.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=radarr.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+
     networks:
       - back
       - reverse-proxy
@@ -65,9 +63,7 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=0
       - PGID=1001
-      - VIRTUAL_HOST=lidarr.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=lidarr.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+
     networks:
       - back
       - reverse-proxy
@@ -98,9 +94,7 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=1001
       - PGID=1001
-      - VIRTUAL_HOST=jackett.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=jackett.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+
     networks:
       - back
       - reverse-proxy
@@ -131,9 +125,6 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=0
       - PGID=1001
-      - VIRTUAL_HOST=headphones.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=headphones.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - back
       - reverse-proxy
@@ -164,9 +155,6 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=0
       - PGID=1001
-      - VIRTUAL_HOST=sonarr.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=sonarr.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - back
       - reverse-proxy
@@ -220,7 +208,7 @@ services:
     volumes:
      - librarian_config:/config
      - librarian_completed_downloads:/downloads
-     - calibre_library:/books:ro
+     - calibre_library:/books
      - type: volume
        source: audiobooks
        target: /media/audiobooks
@@ -231,9 +219,7 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
       - PUID=1003
       - PGID=1001
-      - VIRTUAL_HOST=librarian.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=librarian.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+      - DOCKER_MODS=linuxserver/calibre-web:calibre|linuxserver/mods:lazylibrarian-ffmpeg
     networks:
       - reverse-proxy
     labels:
@@ -281,7 +267,7 @@ services:
 #      - GUAC_USER=abc #optional
 #      - GUAC_PASS=900150983cd24fb0d6963f7d28e17f72 #optional
       - UMASK_SET=022 #optional
-#      - CLI_ARGS= #optional
+      - CLI_ARGS=--enable-auth --disable-use-bonjour #make sure to add a user for lazy libraryian
     volumes:
       - calibre_config:/config
       - calibre_library:/library
@@ -343,10 +329,6 @@ services:
       - WEBPROXY_ENABLED=false
       - WEBPROXY_PORT=9999
       - TZ=${MY_TZ:-SUBFAIL}
-      - VIRTUAL_PORT=9091
-      - VIRTUAL_HOST=transmission.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=transmission.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
       - TRANSMISSION_INCOMPLETE_DIR=/data/incomplete
       - TRANSMISSION_INCOMPLETE_DIR_ENABLED=true
     networks:
