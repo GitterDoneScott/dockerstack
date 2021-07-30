@@ -3,11 +3,12 @@ services:
   plex:
     image: plexinc/pms-docker:latest
     restart: unless-stopped
-#    ports:
-#     - 32400:32400 #plex web
-#     - 33400:33400 #insecure web tools
+    # ports:
+    #  - 32400:32400 #plex web
+    #  - 33400:33400 #insecure web tools
     expose:
-     - 32400
+     - 32400 #plex
+     - 33400 #plex web tools
     volumes:
 #     - plex_config:/config
      - plex_config_local:/config
@@ -45,6 +46,16 @@ services:
       - "traefik.http.routers.plex.tls.certresolver=myresolver"
       - "traefik.http.routers.plex.rule=Host(`plex.${DNS_SUFFIX:-local}`)"
       - "traefik.http.routers.plex.entrypoints=websecure"
+      - "traefik.http.routers.plex.service=plex" #need to set the service explicitly for multiple routers per service      
+      
+      - "traefik.http.services.plexwebtools.loadbalancer.server.port=33400" #needed if multiple ports are exposed
+      - "traefik.http.routers.plexwebtools.tls=true"
+      - "traefik.http.routers.plexwebtools.rule=Host(`plexwebtools.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.plexwebtools.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.plexwebtools.entrypoints=websecure"
+      - "traefik.http.routers.plexwebtools.tls.certresolver=myresolver"
+      - "traefik.http.routers.plexwebtools.service=plexwebtools" #need to set the service explicitly for multiple routers per service      
+      
 
 networks:
   reverse-proxy:
