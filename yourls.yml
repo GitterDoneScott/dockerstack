@@ -1,0 +1,60 @@
+version: '3.1'
+
+services:
+
+  yourls:
+    depends_on: # container dependencies that need to be running first
+      - mysql
+    image: yourls:1.8.2
+    restart: unless-stopped
+    expose:
+      - 80
+    environment:
+      YOURLS_DB_HOST: mysql
+      YOURLS_DB_USER: ${YOURLS_MYSQL_USER:-SUBFAIL}
+      YOURLS_DB_PASS: ${YOURLS_MYSQL_PASSWORD:-SUBFAIL}
+      YOURLS_DB_NAME: ${YOURLS_MYSQL_DATABASE:-SUBFAIL}
+      YOURLS_SITE: https://link.${DNS_SUFFIX:-local}
+      YOURLS_USER: ${YOURLS_USER:-SUBFAIL}
+      YOURLS_PASS: ${YOURLS_PASSWORD:-SUBFAIL}
+    networks:
+      - reverse-proxy
+      - yourls-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.yourls.loadbalancer.server.port=80" #needed if multiple ports are exposed
+      - "traefik.http.routers.yourls.tls.certresolver=myresolver"
+      - "traefik.http.routers.yourls.rule=Host(`link.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.yourls.entrypoints=websecure"
+      - "traefik.http.routers.yourls.service=yourls" #need to set the service explicitly for multiple routers per service      
+
+  mysql:
+    image: mysql:5.7 
+    volumes: # data to map to the container
+#      - yourls_mysql_init:/docker-entrypoint-initdb.d # initialize mysql data from export
+      - yourls_mysql:/var/lib/mysql #mysql data
+    expose:
+      - 3306
+    restart: unless-stopped 
+    environment: # environment variables -- mysql options in this case
+      MYSQL_ROOT_PASSWORD: ${YOURLS_MYSQL_ROOT_PASSWORD:-SUBFAIL}
+      MYSQL_DATABASE: ${YOURLS_MYSQL_DATABASE:-SUBFAIL}
+      MYSQL_USER: ${YOURLS_MYSQL_USER:-SUBFAIL}
+      MYSQL_PASSWORD: ${YOURLS_MYSQL_PASSWORD:-SUBFAIL}
+    networks:
+      - yourls-network
+
+networks:
+  reverse-proxy:
+    external: true
+  yourls-network:
+    driver: bridge
+
+volumes:
+  yourls_mysql:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/yourls"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
