@@ -5,6 +5,7 @@ services:
      - NET_ADMIN
     image: kylemanna/openvpn
     container_name: openvpn_udp
+    entrypoint: ["ovpn_run", "--config", "/etc/openvpn/openvpn_udp.conf"]
     expose:
      - "1194/udp"
     restart: unless-stopped
