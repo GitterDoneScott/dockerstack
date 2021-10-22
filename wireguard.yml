@@ -25,7 +25,7 @@ services:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
     networks:
-      pihole_sub:
+      pihole:
       reverse-proxy:
     labels:
       - "container_group=vpn"
@@ -50,11 +50,11 @@ services:
     environment:
       TZ: ${MY_TZ:-SUBFAIL}
     networks:
-      pihole_sub:
+      pihole:
         ipv4_address: 172.69.0.101
 
 networks:
-  pihole_sub:
+  pihole:
     driver: bridge
     ipam:
       driver: default
