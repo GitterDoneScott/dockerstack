@@ -13,7 +13,7 @@ services:
       - SERVERURL=wireguard.${DNS_SUFFIX:-local} #optional
       - SERVERPORT=51820 #optional
       - PEERS=1 #optional
-      - PEERDNS=172.69.0.101 #optional
+      - PEERDNS=172.69.0.101 #pihole container static ip
 #      - INTERNAL_SUBNET=10.13.13.0 #optional
       - ALLOWEDIPS=0.0.0.0/0 #optional
     volumes:
@@ -36,7 +36,7 @@ services:
       - "traefik.udp.routers.wireguard.service=wireguard"
       - "traefik.udp.services.wireguard.loadbalancer.server.port=51820"
 
-  pihole:
+  pihole_wireguard:
     image: pihole/pihole:latest
     restart: unless-stopped
     expose:
