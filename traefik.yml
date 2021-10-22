@@ -13,6 +13,7 @@ services:
       - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.wireguard.address=:51820/udp"
       - "--entrypoints.openvpn_udp.address=:1194/udp"
       - "--entrypoints.minecraft.address=:25565"
       - "--entrypoints.dns.address=:53"

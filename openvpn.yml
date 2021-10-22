@@ -25,7 +25,7 @@ services:
       
       #udp 
       - "traefik.udp.routers.openvpn.entrypoints=openvpn_udp"
-      - "traefik.udp.routers.openvpn.service=pihole"
+      - "traefik.udp.routers.openvpn.service=openvpn"
       - "traefik.udp.services.openvpn.loadbalancer.server.port=1194"
 
   openvpn_tcp:
