@@ -61,7 +61,6 @@ services:
   pihole_openvpn:
     image: pihole/pihole:latest
     restart: always
-    container_name: pihole
     expose:
       - "80"
       - "443"
