@@ -172,32 +172,32 @@ services:
       - "traefik.http.routers.sonarr.entrypoints=websecure"
       - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
 
-  htpcmanager:
-    image: "linuxserver/htpcmanager:latest"
-    restart: unless-stopped
-    expose:
-     - "8085"
-    volumes:
-     - htpcmanager_config:/config
-    environment:
-      - TZ=${MY_TZ:-SUBFAIL}
-      - PUID=1001
-      - PGID=1001
-    networks:
-      - back
-      - reverse-proxy
-    labels:
-      - "container_group=media"
-      - "traefik.enable=true"
+  # htpcmanager:
+  #   image: "linuxserver/htpcmanager:latest"
+  #   restart: unless-stopped
+  #   expose:
+  #    - "8085"
+  #   volumes:
+  #    - htpcmanager_config:/config
+  #   environment:
+  #     - TZ=${MY_TZ:-SUBFAIL}
+  #     - PUID=1001
+  #     - PGID=1001
+  #   networks:
+  #     - back
+  #     - reverse-proxy
+  #   labels:
+  #     - "container_group=media"
+  #     - "traefik.enable=true"
 
-      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
-      - "traefik.http.services.htpcmanager.loadbalancer.server.port=8085" #needed if multiple ports are exposed
+  #     - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+  #     - "traefik.http.services.htpcmanager.loadbalancer.server.port=8085" #needed if multiple ports are exposed
 
-      - "traefik.http.routers.htpcmanager.tls=true"
-      - "traefik.http.routers.htpcmanager.rule=Host(`htpc.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.htpcmanager.middlewares=middlewares-secured-oauth"
-      - "traefik.http.routers.htpcmanager.entrypoints=websecure"
-      - "traefik.http.routers.htpcmanager.tls.certresolver=myresolver"
+  #     - "traefik.http.routers.htpcmanager.tls=true"
+  #     - "traefik.http.routers.htpcmanager.rule=Host(`htpc.${DNS_SUFFIX:-local}`)"
+  #     - "traefik.http.routers.htpcmanager.middlewares=middlewares-secured-oauth"
+  #     - "traefik.http.routers.htpcmanager.entrypoints=websecure"
+  #     - "traefik.http.routers.htpcmanager.tls.certresolver=myresolver"
 
 
   librarian:
