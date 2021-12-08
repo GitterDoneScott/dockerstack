@@ -1,5 +1,6 @@
 version: '3.3'
 services:
+# stop and remove just one service docker-compose -f media.yml rm -s -v calibre
 #  ombi:
 #    image: "linuxserver/ombi"
 #    restart: unless-stopped
@@ -266,8 +267,8 @@ services:
       - TZ=${MY_TZ:-SUBFAIL}
 #      - GUAC_USER=abc #optional
 #      - GUAC_PASS=900150983cd24fb0d6963f7d28e17f72 #optional
-      - UMASK_SET=022 #optional
-      - CLI_ARGS=--enable-auth --disable-use-bonjour #make sure to add a user for lazy libraryian
+#      - UMASK_SET=022 #optional
+#      - CLI_ARGS=--enable-auth --disable-use-bonjour #make sure to add a user for lazy libraryian
     volumes:
       - calibre_config:/config
       - calibre_library:/library
