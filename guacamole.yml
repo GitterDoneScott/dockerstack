@@ -2,7 +2,7 @@ version: "3"
 
 services:
   guacamole:
-    image: guacamole/guacamole:1.0.0
+    image: guacamole/guacamole:1.3.0
     depends_on:
       - guacd
       - mysql-guac
@@ -51,7 +51,7 @@ services:
       container_group: guacamole
 
   guacd:
-    image: guacamole/guacd:1.0.0
+    image: guacamole/guacd:1.3.0
     restart: always
     networks:
       - guac_back
