@@ -172,6 +172,33 @@ services:
       - "traefik.http.routers.sonarr.middlewares=middlewares-secured-oauth"
       - "traefik.http.routers.sonarr.entrypoints=websecure"
       - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
+  prowlarr:
+    image: linuxserver/prowlarr:develop
+    container_name: prowlarr
+    environment:                                                                                                  
+      - TZ=${MY_TZ:-SUBFAIL}                                                                                      
+      - PUID=0                                                                                                    
+      - PGID=1001  
+    volumes:
+      - prowlarr_config:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+    networks:                                                                                                     
+      - back                                                                                                      
+      - reverse-proxy 
+    labels:                                                                                                       
+      - "container_group=media"                                                                                   
+      - "traefik.enable=true"                                                                                     
+                                                                                                                  
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container  
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696" #needed if multiple ports are exposed                                                                                                          
+      - "traefik.http.routers.prowlarr.tls=true"                                                                    
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DNS_SUFFIX:-local}`)"                                    
+      - "traefik.http.routers.prowlarr.priority=90"                                                                 
+      - "traefik.http.routers.prowlarr.middlewares=middlewares-secured-oauth"                                       
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"                                                       
+      - "traefik.http.routers.prowlarr.tls.certresolver=myresolver"      
 
   # htpcmanager:
   #   image: "linuxserver/htpcmanager:latest"
@@ -544,4 +571,9 @@ volumes:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/scratch/calibre_import"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
-
+  prowlarr_config:                                                                                              
+    driver: "local"                                                                                             
+    driver_opts:                                                                                                
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/prowlarr/config"                                    
+      type: ${VOL_TYPE:-SUBFAIL}                                                                                
+      o: ${VOL_OPS:-SUBFAIL}        
