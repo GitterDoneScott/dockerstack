@@ -16,8 +16,8 @@ services:
       - "--entrypoints.wireguard.address=:51820/udp"
       - "--entrypoints.openvpn_udp.address=:1194/udp"
       - "--entrypoints.minecraft.address=:25565"
-      - "--entrypoints.dns.address=:53"
-      - "--entrypoints.dns_udp.address=:53/udp"
+      # - "--entrypoints.dns.address=:53"
+      # - "--entrypoints.dns_udp.address=:53/udp"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
@@ -30,8 +30,8 @@ services:
     ports:
       - "80:80"  
       - "443:443"
-      - "53:53/tcp" #pihole dns
-      - "53:53/udp"  #pihole dns udp
+      # - "53:53/tcp" #pihole dns
+      # - "53:53/udp"  #pihole dns udp
       - "1194:1194/udp"  #openvpn
       - "25565:25565/tcp" #minecraft
  #     - "8080:8080"
