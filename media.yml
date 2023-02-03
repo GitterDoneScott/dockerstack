@@ -228,40 +228,40 @@ services:
   #     - "traefik.http.routers.htpcmanager.tls.certresolver=myresolver"
 
 
-  librarian:
-    image: "linuxserver/lazylibrarian:latest"
-    restart: unless-stopped
-    expose:
-     - "5299"
-    volumes:
-     - librarian_config:/config
-     - librarian_completed_downloads:/downloads
-     - calibre_library:/books
-     - type: volume
-       source: audiobooks
-       target: /media/audiobooks
-       volume:
-         read_only: false
-         nocopy: true
-    environment:
-      - TZ=${MY_TZ:-SUBFAIL}
-      - PUID=1003
-      - PGID=1001
-      - DOCKER_MODS=linuxserver/calibre-web:calibre|linuxserver/mods:lazylibrarian-ffmpeg
-    networks:
-      - reverse-proxy
-    labels:
-      - "container_group=media"
-      - "traefik.enable=true"
+  # librarian:
+  #   image: "linuxserver/lazylibrarian:latest"
+  #   restart: unless-stopped
+  #   expose:
+  #    - "5299"
+  #   volumes:
+  #    - librarian_config:/config
+  #    - librarian_completed_downloads:/downloads
+  #    - calibre_library:/books
+  #    - type: volume
+  #      source: audiobooks
+  #      target: /media/audiobooks
+  #      volume:
+  #        read_only: false
+  #        nocopy: true
+  #   environment:
+  #     - TZ=${MY_TZ:-SUBFAIL}
+  #     - PUID=1003
+  #     - PGID=1001
+  #     - DOCKER_MODS=linuxserver/calibre-web:calibre|linuxserver/mods:lazylibrarian-ffmpeg
+  #   networks:
+  #     - reverse-proxy
+  #   labels:
+  #     - "container_group=media"
+  #     - "traefik.enable=true"
 
-      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
-      - "traefik.http.services.librarian.loadbalancer.server.port=5299" #needed if multiple ports are exposed
+  #     - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+  #     - "traefik.http.services.librarian.loadbalancer.server.port=5299" #needed if multiple ports are exposed
 
-      - "traefik.http.routers.librarian.tls=true"
-      - "traefik.http.routers.librarian.rule=Host(`librarian.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.librarian.middlewares=middlewares-secured-oauth"
-      - "traefik.http.routers.librarian.entrypoints=websecure"
-      - "traefik.http.routers.librarian.tls.certresolver=myresolver"
+  #     - "traefik.http.routers.librarian.tls=true"
+  #     - "traefik.http.routers.librarian.rule=Host(`librarian.${DNS_SUFFIX:-local}`)"
+  #     - "traefik.http.routers.librarian.middlewares=middlewares-secured-oauth"
+  #     - "traefik.http.routers.librarian.entrypoints=websecure"
+  #     - "traefik.http.routers.librarian.tls.certresolver=myresolver"
   
   calibre-web:
     image: linuxserver/calibre-web
