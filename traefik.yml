@@ -3,10 +3,12 @@ version: "3.3"
 services:
 
   traefik:
-    image: "traefik:v2.2"
+    image: "traefik:v2.9.6"
     container_name: "traefik"
     restart: unless-stopped
     command:
+      - "--providers.file.directory=/fileprovider/"
+      - "--providers.file.watch=true"
       - "--log.level=WARN"
      #- "--api.insecure=true"
       - "--api=true"
@@ -69,11 +71,12 @@ services:
     volumes:
       - "traefik-certs:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik-file-provider:/fileprovider"
 
   # Google OAuth - Single Sign On using OAuth 2.0 for Traefik 2.2
   oauth:
     container_name: oauth
-    image: thomseddon/traefik-forward-auth:latest
+    image: thomseddon/traefik-forward-auth:2.2
     restart: unless-stopped
     networks:
       - reverse-proxy
@@ -110,7 +113,7 @@ services:
     container_name: authelia
     # Check this before upgrading: https://github.com/authelia/authelia/blob/master/BREAKING.md
     # image: authelia/authelia:latest
-    image: authelia/authelia:4.21.0
+    image: authelia/authelia:4.37.2
     restart: always
     networks:
       - reverse-proxy
@@ -157,6 +160,13 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/traefik/certs"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  
+  traefik-file-provider:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/traefik/fileprovider"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
