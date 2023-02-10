@@ -71,7 +71,7 @@ volumes:
   plex_config_local:
     driver: "local"
     driver_opts:
-      device: "/opt/plex_config_local"
+      device: "/mnt/plex_config_local"
       type: none
       o: bind
 
