@@ -7,7 +7,7 @@ services:
      - plex_config:/rsync_dst
      - plex_config_local:/rsync_src
     environment:
-     - RSYNC_OPTIONS="-av"
+     - RSYNC_OPTIONS="-av --delete"
     labels:
       - "container_group=plex"
 
