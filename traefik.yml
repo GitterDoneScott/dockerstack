@@ -9,7 +9,12 @@ services:
     command:
       - "--providers.file.directory=/fileprovider/"
       - "--providers.file.watch=true"
-      - "--log.level=WARN"
+      #- "--log.filePath=/logs/traefik.log"
+      - "--log.level=INFO" 
+      - "--accessLog=true"
+      #- "--accessLog.filePath=/logs/access.log"
+      - "--accessLog.bufferingSize=100"
+      - "--accessLog.filters.statusCodes=204-299,400-499,500-599"
      #- "--api.insecure=true"
       - "--api=true"
       - "--api.dashboard=true"
@@ -34,10 +39,10 @@ services:
       - "443:443"
       # - "53:53/tcp" #pihole dns
       # - "53:53/udp"  #pihole dns udp
-      - "1194:1194/udp"  #openvpn
-      - "25565:25565/tcp" #minecraft
+ #     - "1194:1194/udp"  #openvpn
+ #     - "25565:25565/tcp" #minecraft
  #     - "8080:8080"
-      - "51820:51820/udp" #wireguard
+ #     - "51820:51820/udp" #wireguard
     networks:
       - reverse-proxy
     labels:
@@ -52,14 +57,18 @@ services:
       
       #middlewares are reusable
       - "traefik.http.middlewares.myauth.chain.middlewares=auth"
-      - "traefik.http.middlewares.bypassauth.chain.middlewares="
+      - "traefik.http.middlewares.middlewares-bypassauth.chain.middlewares=middlewares-traefik-bouncer"
       #- "traefik.http.middlewares.auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/" #test/test
       - "traefik.http.middlewares.auth.basicauth.users=${DEFAULT_USER:-SUBFAIL}"
       #google oauth middleware
-      - "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-oauth"
+      - "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-traefik-bouncer,middlewares-oauth"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.address=http://oauth:4181"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.authResponseHeaders=X-Forwarded-User"
+
+      #crowdsec middleware
+      - "traefik.http.middlewares.middlewares-traefik-bouncer.forwardauth.address=http://traefik-bouncer:8080/api/v1/forwardAuth"
+      - "traefik.http.middlewares.middlewares-traefik-bouncer.forwardauth.trustForwardHeader=true"
 
       #authelia middleware
       #- "traefik.http.routers.authelia-rtr.middlewares=chain-authelia"
@@ -148,6 +157,19 @@ services:
       ## HTTP Services
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
       - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
+
+  # CrowdSec Bouncer - Traefik
+  traefik-bouncer:
+    image: fbonalair/traefik-crowdsec-bouncer
+    container_name: traefik-bouncer
+    networks:
+      - reverse-proxy
+    environment:
+      GIN_MODE: release # default is debug (more logs)
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_HOST_API_KEY:-SUBFAIL}
+      CROWDSEC_AGENT_HOST: ${CROWDSEC_HOST:-SUBFAIL}:8080 # CrowdSec host and port
+      CROWDSEC_BOUNCER_LOG_LEVEL: 2 # https://pkg.go.dev/github.com/rs/zerolog#readme-leveled-logging
+
 
 networks:
   reverse-proxy:

@@ -46,7 +46,8 @@ services:
       - "traefik.http.routers.plex.tls.certresolver=myresolver"
       - "traefik.http.routers.plex.rule=Host(`plex.${DNS_SUFFIX:-local}`)"
       - "traefik.http.routers.plex.entrypoints=websecure"
-      - "traefik.http.routers.plex.service=plex" #need to set the service explicitly for multiple routers per service      
+      - "traefik.http.routers.plex.service=plex" #need to set the service explicitly for multiple routers per service
+      - "traefik.http.routers.plex.middlewares=middlewares-bypassauth"      
       
       - "traefik.http.services.plexwebtools.loadbalancer.server.port=33400" #needed if multiple ports are exposed
       - "traefik.http.routers.plexwebtools.tls=true"
