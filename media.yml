@@ -113,35 +113,35 @@ services:
       - "traefik.http.routers.jackett.entrypoints=websecure"
       - "traefik.http.routers.jackett.tls.certresolver=myresolver"
 
-  headphones:
-    image: "linuxserver/headphones:latest"
-    restart: unless-stopped
-    expose:
-     - "8181"
-    volumes:
-     - headphones_config:/config
-     - headphones_downloads:/data/complete/headphones
-     - headphones_music:/music
-    environment:
-      - TZ=${MY_TZ:-SUBFAIL}
-      - PUID=0
-      - PGID=1001
-    networks:
-      - back
-      - reverse-proxy
-    labels:
-      - "container_group=media"
-      - "traefik.enable=true"
+  # headphones:
+  #   image: "linuxserver/headphones:latest"
+  #   restart: unless-stopped
+  #   expose:
+  #    - "8181"
+  #   volumes:
+  #    - headphones_config:/config
+  #    - headphones_downloads:/data/complete/headphones
+  #    - headphones_music:/music
+  #   environment:
+  #     - TZ=${MY_TZ:-SUBFAIL}
+  #     - PUID=0
+  #     - PGID=1001
+  #   networks:
+  #     - back
+  #     - reverse-proxy
+  #   labels:
+  #     - "container_group=media"
+  #     - "traefik.enable=true"
 
-      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
-      - "traefik.http.services.headphones.loadbalancer.server.port=8181" #needed if multiple ports are exposed
+  #     - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+  #     - "traefik.http.services.headphones.loadbalancer.server.port=8181" #needed if multiple ports are exposed
 
-      - "traefik.http.routers.headphones.tls=true"
-      - "traefik.http.routers.headphones.rule=Host(`headphones.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.headphones.priority=90"
-      - "traefik.http.routers.headphones.middlewares=middlewares-secured-oauth"
-      - "traefik.http.routers.headphones.entrypoints=websecure"
-      - "traefik.http.routers.headphones.tls.certresolver=myresolver"
+  #     - "traefik.http.routers.headphones.tls=true"
+  #     - "traefik.http.routers.headphones.rule=Host(`headphones.${DNS_SUFFIX:-local}`)"
+  #     - "traefik.http.routers.headphones.priority=90"
+  #     - "traefik.http.routers.headphones.middlewares=middlewares-secured-oauth"
+  #     - "traefik.http.routers.headphones.entrypoints=websecure"
+  #     - "traefik.http.routers.headphones.tls.certresolver=myresolver"
 
   sonarr:
     image: "linuxserver/sonarr:latest"
@@ -263,59 +263,59 @@ services:
   #     - "traefik.http.routers.librarian.entrypoints=websecure"
   #     - "traefik.http.routers.librarian.tls.certresolver=myresolver"
   
-  calibre-web:
-    image: linuxserver/calibre-web
-    restart: unless-stopped
-    expose:
-      - "8083"
-    environment:
-      - PUID=1003
-      - PGID=1001
-      - TZ=${MY_TZ:-SUBFAIL}
-    volumes:
-      - calibre-web:/config
-      - calibre_library:/books:nocopy
-    networks:
-      - reverse-proxy
-      - smtp
-    labels:
-      - "container_group=media"
-      - "traefik.enable=true"
-      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
-      - "traefik.http.routers.library.tls.certresolver=myresolver"
-      - "traefik.http.routers.library.rule=Host(`library.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.library.entrypoints=websecure"
+#   calibre-web:
+#     image: linuxserver/calibre-web
+#     restart: unless-stopped
+#     expose:
+#       - "8083"
+#     environment:
+#       - PUID=1003
+#       - PGID=1001
+#       - TZ=${MY_TZ:-SUBFAIL}
+#     volumes:
+#       - calibre-web:/config
+#       - calibre_library:/books:nocopy
+#     networks:
+#       - reverse-proxy
+#       - smtp
+#     labels:
+#       - "container_group=media"
+#       - "traefik.enable=true"
+#       - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+#       - "traefik.http.routers.library.tls.certresolver=myresolver"
+#       - "traefik.http.routers.library.rule=Host(`library.${DNS_SUFFIX:-local}`)"
+#       - "traefik.http.routers.library.entrypoints=websecure"
 
-  calibre:
-    image: linuxserver/calibre
-    environment:
-      - PUID=1003
-      - PGID=1001
-      - TZ=${MY_TZ:-SUBFAIL}
-#      - GUAC_USER=abc #optional
-#      - GUAC_PASS=900150983cd24fb0d6963f7d28e17f72 #optional
-#      - UMASK_SET=022 #optional
-#      - CLI_ARGS=--enable-auth --disable-use-bonjour #make sure to add a user for lazy libraryian
-    volumes:
-      - calibre_config:/config
-      - calibre_library:/library
-      - calibre_scratch:/import
-    networks:
-      - reverse-proxy
-      - smtp
-    # ports:
-    #   - 8080:8080
-    #   - 8081:8081
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
-      - "traefik.http.services.calibre.loadbalancer.server.port=8080" #needed if multiple ports are exposed
-      - "traefik.http.routers.calibre.tls=true"
-      - "traefik.http.routers.calibre.rule=Host(`calibre.${DNS_SUFFIX:-local}`)"
-      - "traefik.http.routers.calibre.middlewares=middlewares-secured-oauth"
-      - "traefik.http.routers.calibre.entrypoints=websecure"
-      - "traefik.http.routers.calibre.tls.certresolver=myresolver"
+#   calibre:
+#     image: linuxserver/calibre
+#     environment:
+#       - PUID=1003
+#       - PGID=1001
+#       - TZ=${MY_TZ:-SUBFAIL}
+# #      - GUAC_USER=abc #optional
+# #      - GUAC_PASS=900150983cd24fb0d6963f7d28e17f72 #optional
+# #      - UMASK_SET=022 #optional
+# #      - CLI_ARGS=--enable-auth --disable-use-bonjour #make sure to add a user for lazy libraryian
+#     volumes:
+#       - calibre_config:/config
+#       - calibre_library:/library
+#       - calibre_scratch:/import
+#     networks:
+#       - reverse-proxy
+#       - smtp
+#     # ports:
+#     #   - 8080:8080
+#     #   - 8081:8081
+#     restart: unless-stopped
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+#       - "traefik.http.services.calibre.loadbalancer.server.port=8080" #needed if multiple ports are exposed
+#       - "traefik.http.routers.calibre.tls=true"
+#       - "traefik.http.routers.calibre.rule=Host(`calibre.${DNS_SUFFIX:-local}`)"
+#       - "traefik.http.routers.calibre.middlewares=middlewares-secured-oauth"
+#       - "traefik.http.routers.calibre.entrypoints=websecure"
+#       - "traefik.http.routers.calibre.tls.certresolver=myresolver"
 
   transmission:
     image: "haugene/transmission-openvpn"
