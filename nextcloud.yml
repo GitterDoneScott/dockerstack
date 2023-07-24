@@ -37,9 +37,6 @@ services:
       - nextcloud_back
       - smtp
     environment:
-      - VIRTUAL_HOST=nextcloud.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_HOST=nextcloud.${DNS_SUFFIX:-local}
-      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=${NEXTCLOUD_MYSQL_USER:-SUBFAIL}
       - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD:-SUBFAIL}
