@@ -21,8 +21,8 @@ services:
       - /lib/modules:/lib/modules
     expose:
       - 51820/udp
-    ports:
-      - 51820:51820/udp
+    # ports:
+    #   - 51820:51820/udp #un comment to use without reverse proxy
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
