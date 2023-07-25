@@ -19,7 +19,6 @@ services:
 
     networks:
       - reverse-proxy
-      - smtp
     labels:
       - "container_group=bitwarden"
       - "traefik.enable=true"

@@ -42,7 +42,7 @@ services:
  #     - "1194:1194/udp"  #openvpn
  #     - "25565:25565/tcp" #minecraft
  #     - "8080:8080"
-       - "51820:51820/udp" #wireguard
+      - "51820:51820/udp" #wireguard
     networks:
       - reverse-proxy
     labels:
