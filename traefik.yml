@@ -42,7 +42,7 @@ services:
  #     - "1194:1194/udp"  #openvpn
  #     - "25565:25565/tcp" #minecraft
  #     - "8080:8080"
- #     - "51820:51820/udp" #wireguard
+       - "51820:51820/udp" #wireguard
     networks:
       - reverse-proxy
     labels:
@@ -57,11 +57,14 @@ services:
       
       #middlewares are reusable
       - "traefik.http.middlewares.myauth.chain.middlewares=auth"
-      - "traefik.http.middlewares.middlewares-bypassauth.chain.middlewares=middlewares-traefik-bouncer"
+      - "traefik.http.middlewares.middlewares-bypassauth.chain.middlewares="
+
+      #- "traefik.http.middlewares.middlewares-bypassauth.chain.middlewares=middlewares-traefik-bouncer"
       #- "traefik.http.middlewares.auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/" #test/test
       - "traefik.http.middlewares.auth.basicauth.users=${DEFAULT_USER:-SUBFAIL}"
       #google oauth middleware
-      - "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-traefik-bouncer,middlewares-oauth"
+      - "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-oauth"
+      #- "traefik.http.middlewares.middlewares-secured-oauth.chain.middlewares=middlewares-traefik-bouncer,middlewares-oauth"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.address=http://oauth:4181"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.authResponseHeaders=X-Forwarded-User"
