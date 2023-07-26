@@ -16,6 +16,7 @@ services:
       - "SMTP_USERNAME=apikey"
       - "SMTP_PASSWORD=${SENDGRID_API_KEY:-SUBFAIL}"
       - "SMTP_AUTH_MECHANISM='Login'"
+      - "SMTP_FROM=${SENDGRID_FROM_EMAIL:-SUBFAIL}"
 
     networks:
       - reverse-proxy
