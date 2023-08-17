@@ -188,12 +188,19 @@ volumes:
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
   
+#  traefik-file-provider:
+#    driver: "local"
+#    driver_opts:
+#      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/traefik/fileprovider"
+#      type: ${VOL_TYPE:-SUBFAIL}
+#      o: ${VOL_OPS:-SUBFAIL}
+
   traefik-file-provider:
     driver: "local"
     driver_opts:
-      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/traefik/fileprovider"
-      type: ${VOL_TYPE:-SUBFAIL}
-      o: ${VOL_OPS:-SUBFAIL}
+      device: "${TRAEFIK_FILE_PROVIDER_PATH:-SUBFAIL}"
+      type: none
+      o: bind
 
   authelia-config:
     driver: "local"
