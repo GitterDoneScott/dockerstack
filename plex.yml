@@ -10,8 +10,8 @@ services:
      - 32400 #plex
      - 33400 #plex web tools
     volumes:
-#     - plex_config:/config
-     - plex_config_local:/config
+     - plex_config:/config
+#     - plex_config_local:/config
      - plex_config:/mnt/plex_config_remote
      - plex_config_local:/mnt/plex_config_local
      - /tmp:/transcode #transcoode to memory
