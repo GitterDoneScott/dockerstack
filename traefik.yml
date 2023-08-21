@@ -7,7 +7,7 @@ services:
     container_name: "traefik"
     restart: unless-stopped
     command:
-      - "--providers.file.directory=/fileprovider/"
+      - "--providers.file.directory=/fileprovider"
       - "--providers.file.watch=true"
       #- "--log.filePath=/logs/traefik.log"
       - "--log.level=INFO" 
