@@ -1,10 +1,11 @@
 version: '2.2'
 services:
   syncthing:
-    image: linuxserver/syncthing:version-v1.12.0
+    image: linuxserver/syncthing:1.23.7
     restart: unless-stopped
     ports:
-     - 22000:22000 #
+     - 22000:22000/tcp
+     - 22000:22000/udp  #
      - 21027:21027/udp #
     expose:
      - 8384
@@ -23,11 +24,7 @@ services:
      - PGID=1001
      - PUID=0
      - UMASK_SET=002
-     - VIRTUAL_PORT=8384
      - TZ=${MY_TZ:-SUBFAIL}
-     - VIRTUAL_HOST=syncthing.${DNS_SUFFIX:-local}
-     - LETSENCRYPT_HOST=syncthing.${DNS_SUFFIX:-local}
-     - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - reverse-proxy
     labels:
@@ -106,6 +103,12 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/bitwarden"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_yourls:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/yourls"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
       
