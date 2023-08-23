@@ -21,6 +21,8 @@ services:
      - syncthing_home:/mnt/home
      - syncthing_bitwarden:/mnt/bitwarden
      - syncthing_yourls:/mnt/yourls
+     - syncthing_plex_config:/mnt/plex_config
+     - syncthing_plex_config_local:/mnt/plex_config_local
     environment:
      - PGID=1001
      - PUID=0
@@ -112,4 +114,16 @@ volumes:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/yourls"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
+  syncthing_plex_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/plex/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_plex_config_local:
+    driver: "local"
+    driver_opts:
+      device: "/mnt/plex_config_local"
+      type: none
+      o: bind
       
