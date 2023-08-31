@@ -31,7 +31,7 @@ services:
       - nextcloud_camelot:/mnt/camelot:ro
       - nextcloud_scratch:/mnt/scratch
       - nextcloud_books:/mnt/books:ro
-    restart: always
+    restart: unless-stopped
     networks:
       - reverse-proxy
       - nextcloud_back

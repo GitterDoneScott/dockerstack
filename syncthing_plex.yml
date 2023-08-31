@@ -1,0 +1,35 @@
+version: '2.2'
+services:
+  syncthing:
+    image: linuxserver/syncthing:1.23.7
+    restart: unless-stopped
+    ports:
+     - 22000:22000/tcp
+     - 22000:22000/udp  #
+     - 21027:21027/udp #
+     - 8384:8384 #webui
+#    expose:
+#     - 8384
+    volumes:
+     - syncthing_config:/config
+     - syncthing_plex_config_local:/mnt/plex_config_local
+    environment:
+     - PGID=1001
+     - PUID=0
+     - UMASK_SET=002
+     - TZ=${MY_TZ:-SUBFAIL}
+
+volumes:
+  syncthing_config:
+    driver: "local"
+    driver_opts:
+      device: "/opt/syncthing"
+      type: none
+      o: bind
+  syncthing_plex_config_local:
+    driver: "local"
+    driver_opts:
+      device: "/mnt/plex_config_local"
+      type: none
+      o: bind
+      

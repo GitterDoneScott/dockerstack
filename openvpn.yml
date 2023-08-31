@@ -36,7 +36,7 @@ services:
     entrypoint: ["ovpn_run", "--config", "/etc/openvpn/openvpn_tcp.conf"]
     expose:
      - "443"
-    restart: always
+    restart: unless-stopped
     volumes:
      # - ./openvpn-data/conf:/etc/openvpn
      - openvpn_data:/etc/openvpn
@@ -60,7 +60,7 @@ services:
     
   pihole_openvpn:
     image: pihole/pihole:latest
-    restart: always
+    restart: unless-stopped
     expose:
       - "80"
       - "443"

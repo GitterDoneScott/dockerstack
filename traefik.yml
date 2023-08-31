@@ -166,6 +166,7 @@ services:
   # CrowdSec Bouncer - Traefik
   traefik-bouncer:
     image: fbonalair/traefik-crowdsec-bouncer
+    restart: unless-stopped
     container_name: traefik-bouncer
     networks:
       - reverse-proxy
