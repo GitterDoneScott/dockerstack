@@ -23,6 +23,7 @@ services:
      - syncthing_yourls:/mnt/yourls
      - syncthing_plex_config:/mnt/plex_config
      - syncthing_plex_config_local:/mnt/plex_config_local
+     - syncthing_containers:/mnt/containers
     environment:
      - PGID=1001
      - PUID=0
@@ -126,4 +127,10 @@ volumes:
       device: "/mnt/plex_config_local"
       type: none
       o: bind
+  syncthing_containers:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
       
