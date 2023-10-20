@@ -1,10 +1,11 @@
 version: '2.2'
 services:
   syncthing:
-    image: linuxserver/syncthing:version-v1.12.0
+    image: linuxserver/syncthing:1.23.7
     restart: unless-stopped
     ports:
-     - 22000:22000 #
+     - 22000:22000/tcp
+     - 22000:22000/udp  #
      - 21027:21027/udp #
     expose:
      - 8384
@@ -19,15 +20,15 @@ services:
      - syncthing_data:/mnt/data
      - syncthing_home:/mnt/home
      - syncthing_bitwarden:/mnt/bitwarden
+     - syncthing_yourls:/mnt/yourls
+     - syncthing_plex_config:/mnt/plex_config
+     - syncthing_plex_config_local:/mnt/plex_config_local
+     - syncthing_containers:/mnt/containers
     environment:
      - PGID=1001
      - PUID=0
      - UMASK_SET=002
-     - VIRTUAL_PORT=8384
      - TZ=${MY_TZ:-SUBFAIL}
-     - VIRTUAL_HOST=syncthing.${DNS_SUFFIX:-local}
-     - LETSENCRYPT_HOST=syncthing.${DNS_SUFFIX:-local}
-     - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - reverse-proxy
     labels:
@@ -106,6 +107,30 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/bitwarden"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_yourls:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/yourls"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_plex_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/plex/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  syncthing_plex_config_local:
+    driver: "local"
+    driver_opts:
+      device: "/mnt/plex_config_local"
+      type: none
+      o: bind
+  syncthing_containers:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
       

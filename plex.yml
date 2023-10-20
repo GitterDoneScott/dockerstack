@@ -14,7 +14,7 @@ services:
      - plex_config_local:/config
      - plex_config:/mnt/plex_config_remote
      - plex_config_local:/mnt/plex_config_local
-     - /tmp:/transcode #transcoode to memory
+     - /tmp:/transcode #transcode to memory
 #     - plex_transcode:/transcode
      - audiobooks:/mnt/audiobooks
      - scratch:/mnt/scratch
@@ -27,12 +27,8 @@ services:
      - CHANGE_CONFIG_DIR_OWNERSHIP=true
 #     - PLEX_MEDIA_SERVER_USE_SYSLOG=true
      - HTTPS_METHOD=noredirect #older devices can't do TLS
-     - VIRTUAL_PORT=32400
 #     - PLEX_CLAIM= #valid for 5 minutes
      - TZ=${MY_TZ:-SUBFAIL}
-     - VIRTUAL_HOST=plex.${DNS_SUFFIX:-local}
-     - LETSENCRYPT_HOST=plex.${DNS_SUFFIX:-local}
-     - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
     networks:
       - reverse-proxy
 #    cpu_percent: 30 #limit cpu usage percentage
