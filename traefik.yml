@@ -15,7 +15,7 @@ services:
       #- "--accessLog.filePath=/logs/access.log"
       - "--accessLog.bufferingSize=100"
       - "--accessLog.filters.statusCodes=204-299,400-499,500-599"
-     #- "--api.insecure=true"
+      #- "--api.insecure=true"
       - "--api=true"
       - "--api.dashboard=true"
       - "--providers.docker=true"
@@ -29,11 +29,13 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      #- "--certificatesResolvers.myresolver.acme.httpChallenge.entryPoint=web"
-      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      #- "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.email=${LETS_ENC_EMAIL:-SUBFAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=8.8.8.8:53"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.delaybeforecheck=90"
     ports:
       - "80:80"  
       - "443:443"
@@ -47,6 +49,7 @@ services:
       - reverse-proxy
     environment:
       - "DNS_SUFFIX=${DNS_SUFFIX:-local}"
+      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN:-SUBFAIL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
@@ -176,6 +179,43 @@ services:
       CROWDSEC_AGENT_HOST: ${CROWDSEC_HOST:-SUBFAIL}:8080 # CrowdSec host and port
       CROWDSEC_BOUNCER_LOG_LEVEL: 2 # https://pkg.go.dev/github.com/rs/zerolog#readme-leveled-logging
 
+# cloudflare free doesn't support *.*.TLD. Use <host>.TLD -> Traefik (set HTTP Host in HTTP header in tunnel setup) 
+  cloudflare-tunnel:
+    container_name: cloudflared-tunnel
+    image: cloudflare/cloudflared:2024.6.1
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - reverse-proxy
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+
+# cloudflare free doesn't support *.*.TLD
+#   cloudflare-companion:
+#     image: ghcr.io/tiredofit/docker-traefik-cloudflare-companion:7.3.1
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#     environment:
+#       - CF_TOKEN=${CLOUDFLARE_DNS_API_TOKEN:-SUBFAIL}
+#       - TIMEZONE=${MY_TZ:-SUBFAIL}
+#       - LOG_TYPE=CONSOLE
+#       - LOG_LEVEL=INFO
+#       - TRAEFIK_VERSION=2
+#       - RC_TYPE=CNAME
+#       - TARGET_DOMAIN=${DNS_SUFFIX:-local}
+#       - REFRESH_ENTRIES=TRUE
+#       - ENABLE_TRAEFIK_POLL=TRUE
+#       # ensure that Traefik authenication is disabled or json parse will fail
+#       - TRAEFIK_POLL_URL=https://traefik.${DNS_SUFFIX:-local}
+# #      - TRAEFIK_FILTER_LABEL=traefik.constraint
+# #      - TRAEFIK_FILTER=proxy-public
+#       - DOMAIN1=${DNS_SUFFIX:-local}
+#       - DOMAIN1_ZONE_ID=${CLOUDFLARE_DNS_ZONE_ID:-SUBFAIL}
+#       - DOMAIN1_PROXIED=TRUE
+#       - ENABLE_DOCKER_POLL=FALSE
+#     restart: unless-stopped
+#     networks:
+#       - reverse-proxy
 
 networks:
   reverse-proxy:
