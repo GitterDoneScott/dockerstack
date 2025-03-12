@@ -1,0 +1,45 @@
+version: "3.3"
+
+services:
+
+  n8n:
+    image: "n8nio/n8n:1.82.1"
+    restart: unless-stopped
+    expose:
+      - 443
+    environment:
+    - N8N_HOST=n8n.${DNS_SUFFIX:-local}
+    - N8N_PORT=443
+    - N8N_PROTOCOL=https
+    - N8N_EDITOR_BASE_URL=https://n8n.${DNS_SUFFIX:-local}
+    - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-SUBFAIL}
+    - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+    - N8N_REINSTALL_MISSING_PACKAGES=true
+    - N8N_RUNNERS_ENABLED=true
+    - GENERIC_TIMEZONE=${MY_TZ:-SUBFAIL}
+    - TZ=${MY_TZ:-SUBFAIL}
+    - DB_TYPE=postgresdb
+    - DB_POSTGRESDB_DATABASE=${N8N_DB_POSTGRESDB_DATABASE:-SUBFAIL}
+    - DB_POSTGRESDB_SCHEMA=${N8N_DB_POSTGRESDB_SCHEMA:-SUBFAIL}
+    - DB_POSTGRESDB_HOST=${N8N_DB_POSTGRESDB_HOST:-SUBFAIL}
+    - DB_POSTGRESDB_PORT=${N8N_DB_POSTGRESDB_PORT:-SUBFAIL}
+    - DB_POSTGRESDB_USER=${N8N_DB_POSTGRESDB_USER:-SUBFAIL}
+    - DB_POSTGRESDB_PASSWORD=${N8N_DB_POSTGRESDB_PASSWORD:-SUBFAIL}
+
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.n8n.loadbalancer.server.port=443" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.n8n.tls=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.${DNS_SUFFIX:-local}`)"
+      - "traefik.http.routers.n8n.middlewares=middlewares-secured-oauth"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=myresolver"
+
+networks:
+  reverse-proxy:
+    external: true
