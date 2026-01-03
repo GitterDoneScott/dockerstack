@@ -1,33 +1,23 @@
 version: '3.2'
 services:
-    changedetection:
-      image: ghcr.io/dgtlmoon/changedetection.io
-      container_name: changedetection
-      hostname: changedetection
-      volumes:
-        - changedetection-data:/datastore
-      environment:
-        - PLAYWRIGHT_DRIVER_URL=ws://playwright-chrome:3000/chrome?launch={"defaultViewport":{"height":720,"width":1280},"headless":false,"stealth":true}&blockAds=true
-      ports:
-        - 5000:5000
-      restart: unless-stopped
+  changedetection:
+    image: ghcr.io/dgtlmoon/changedetection.io
+    container_name: changedetection
+    environment:
+      PLAYWRIGHT_DRIVER_URL: "ws://playwright-chrome:3000/chrome?blockAds=false&launch=eyJoZWFkbGVzcyI6ZmFsc2UsInN0ZWFsdGgiOnRydWUsImFyZ3MiOlsiLS13aW5kb3ctc2l6ZT0xOTIwLDEwODAiLCItLW5vLXNhbmRib3giLCItLWRpc2FibGUtZGV2LXNobS11c2FnZSJdfQ==" #launch string: {"headless":false,"stealth":true,"args":["--window-size=1920,1080","--no-sandbox","--disable-dev-shm-usage"]}
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    volumes:
+      - changedetection-data:/datastore:rw
 
-    playwright-chrome:
-        hostname: playwright-chrome
-        image: ghcr.io/browserless/chrome
-        restart: unless-stopped
-        environment:
-            - SCREEN_WIDTH=1920
-            - SCREEN_HEIGHT=1024
-            - SCREEN_DEPTH=16
-            - ENABLE_DEBUGGER=false
-            - PREBOOT_CHROME=true
-            - CONNECTION_TIMEOUT=300000
-            - MAX_CONCURRENT_SESSIONS=5
-            - CHROME_REFRESH_TIME=600000
-            - DEFAULT_BLOCK_ADS=true
-            - DEFAULT_STEALTH=true
-            - DEFAULT_IGNORE_HTTPS_ERRORS=true
+  playwright-chrome:
+    image: ghcr.io/browserless/chrome
+    hostname: playwright-chrome
+    environment:
+      TIMEOUT: "300000"
+      CONCURRENT: "10"
+    restart: unless-stopped
  
 networks:
   reverse-proxy:
