@@ -4,6 +4,9 @@ services:
 
   twingate:
     image: "twingate/connector:1"
+    dns:
+      - 192.168.3.2 # Primary internal DNS
+      - 192.168.3.3 # Secondary DNS
     restart: unless-stopped
     network_mode: host
     environment:
