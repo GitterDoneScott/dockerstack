@@ -35,7 +35,9 @@ services:
       - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
       - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare"
       - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=8.8.8.8:53"
-      - "--certificatesresolvers.myresolver.acme.dnschallenge.delaybeforecheck=90"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.delaybeforecheck=120"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.disablepropagationcheck=true"
+
     ports:
       - "80:80"  
       - "443:443"
