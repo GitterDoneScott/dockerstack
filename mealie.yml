@@ -1,0 +1,134 @@
+services:
+
+  # Mealie — self-hosted recipe manager
+  # https://github.com/mealie-recipes/mealie/pkgs/container/mealie
+  #
+  # INTERNET-FACING: meals.${DNS_SUFFIX} is published through Traefik to the
+  # WAN, and Mealie's own Google OIDC login is the only gate (no forward-auth
+  # middleware on this router). Consequences baked in below:
+  #   - OIDC_SIGNUP_ENABLED=false   → admin invites new users via email
+  #   - ALLOW_PASSWORD_LOGIN=false  → no password form exposed; see BOOTSTRAP
+  #   - API_DOCS=false              → /docs not published
+  #   - CrowdSec bouncer on the router (IP reputation) — drop the label if
+  #     the bouncer is ever unhealthy, since a dead bouncer fails closed.
+  #
+  # BOOTSTRAP (first run only, from the shell — do NOT commit these):
+  #   MEALIE_ALLOW_PASSWORD_LOGIN=true MEALIE_OIDC_SIGNUP_ENABLED=true \
+  #     docker compose -f mealie.yml up -d
+  #   → /login?direct=1, changeme@example.com / MyPassword, change password
+  #   → sign in with Google (creates your user) → promote it to admin
+  #   → docker compose -f mealie.yml up -d   (back to safe defaults)
+  mealie:
+    image: "ghcr.io/mealie-recipes/mealie:${MEALIE_TAG:-v3.29.0}"
+    container_name: mealie
+    restart: unless-stopped
+    expose:
+      - "9000"
+    volumes:
+      - mealie_data:/app/data
+    environment:
+      - TZ=${MY_TZ:-SUBFAIL}
+      # Hardcoded to match grocy/nextcloud. The app data dir on the NFS
+      # export must be owned by 1001:1001.
+      - PUID=1001
+      - PGID=1001
+
+      # Site — BASE_URL must match the public URL exactly (invites, emails,
+      # OIDC callback). Note: no trailing slash.
+      - BASE_URL=https://meals.${DNS_SUFFIX:-local}
+      - ALLOW_SIGNUP=${MEALIE_ALLOW_SIGNUP:-false}
+      - API_DOCS=${MEALIE_API_DOCS:-false}
+      - DEFAULT_GROUP=${MEALIE_DEFAULT_GROUP:-Home}
+      - DEFAULT_HOUSEHOLD=${MEALIE_DEFAULT_HOUSEHOLD:-Family}
+      - DEFAULT_EMAIL=${MEALIE_DEFAULT_EMAIL:-SUBFAIL}
+
+      # SQLite. WAL for concurrent readers/writers — still not a guarantee
+      # on NFS, so backups are the real safety net.
+      - DB_ENGINE=sqlite
+      - SQLITE_MIGRATE_JOURNAL_WAL=${MEALIE_SQLITE_WAL:-true}
+
+      # Trust X-Forwarded-* only from the proxy chain, not `*`
+      - HOST_IP=${MEALIE_HOST_IP:-172.16.0.0/12,192.168.3.0/24}
+
+      # SMTP — invites and password resets
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_AUTH_STRATEGY=${SMTP_AUTH_STRATEGY:-TLS}
+      - SMTP_FROM_EMAIL=${MEALIE_DEFAULT_EMAIL:-SUBFAIL}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Mealie}
+      - SMTP_USER=${MEALIE_DEFAULT_EMAIL:-SUBFAIL}
+      - SMTP_PASSWORD=${MEALIE_SMTP_PASSWORD:-SUBFAIL}
+
+      # Legacy nginx-proxy vars, kept for parity with grocy.yml
+      - VIRTUAL_HOST=meals.${DNS_SUFFIX:-local}
+      # ── OIDC via Google (single sign-on, no Mealie login step) ─────
+      # Google Cloud Console → APIs & Services → Credentials → OAuth
+      # client ID (Web application). Authorized redirect URI:
+      #   https://meals.${DNS_SUFFIX}/login
+      #   https://meals.${DNS_SUFFIX}/login?direct=1
+      - OIDC_AUTH_ENABLED=true
+      - OIDC_CONFIGURATION_URL=https://accounts.google.com/.well-known/openid-configuration
+      - OIDC_CLIENT_ID=${MEALIE_OIDC_CLIENT_ID:-SUBFAIL}
+      - OIDC_CLIENT_SECRET=${MEALIE_OIDC_CLIENT_SECRET:-SUBFAIL}
+      - OIDC_PROVIDER_NAME=Google
+      - OIDC_AUTO_REDIRECT=${MEALIE_OIDC_AUTO_REDIRECT:-true}
+      - OIDC_REMEMBER_ME=${MEALIE_OIDC_REMEMBER_ME:-true}
+      - OIDC_USER_CLAIM=${MEALIE_OIDC_USER_CLAIM:-email}
+      # Closed signup: an admin invites each user (invite goes over SMTP).
+      # Open signup + an External Google client = anyone who finds the URL
+      # gets an account.
+      - OIDC_SIGNUP_ENABLED=${MEALIE_OIDC_SIGNUP_ENABLED:-false}
+      # Password form disabled on an internet-facing host. Recovery path:
+      # start once with ALLOW_PASSWORD_LOGIN=true, fix, then turn it off.
+      - ALLOW_PASSWORD_LOGIN=${MEALIE_ALLOW_PASSWORD_LOGIN:-false}
+      # Brute-force guards (apply to the password path if you re-enable it)
+      - SECURITY_MAX_LOGIN_ATTEMPTS=${MEALIE_MAX_LOGIN_ATTEMPTS:-5}
+      - SECURITY_USER_LOCKOUT_TIME=${MEALIE_LOCKOUT_HOURS:-24}
+      - LETSENCRYPT_HOST=meals.${DNS_SUFFIX:-local}
+      - LETSENCRYPT_EMAIL=${LETS_ENC_EMAIL:-SUBFAIL}
+    networks:
+      - reverse-proxy
+    labels:
+      - "container_group=home"
+      - "traefik.enable=true"
+
+      - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
+      - "traefik.http.services.mealie.loadbalancer.server.port=9000" #needed if multiple ports are exposed
+
+      - "traefik.http.routers.mealie.tls=true"
+      - "traefik.http.routers.mealie.rule=Host(`meals.${DNS_SUFFIX:-local}`)"
+      # No middlewares-secured-oauth here: Mealie does its own Google OIDC
+      # login. Re-add it only if you want the edge gate back (that would
+      # give two Google prompts, not one).
+      #
+      # NOTE: no CrowdSec bouncer here. middlewares-traefik-bouncer returns a
+      # bare "Forbidden" (403, 9 bytes, text/plain) for every request while
+      # its LAPI connection is unhealthy — which looks exactly like an app
+      # failure and never reaches the container. It's commented out of the
+      # middlewares-secured-oauth chain in traefik.yml for the same reason.
+      # Re-add only after `docker logs traefik-bouncer` is clean.
+      - "traefik.http.routers.mealie.entrypoints=websecure"
+      - "traefik.http.routers.mealie.tls.certresolver=myresolver"
+    # Python pre-allocates aggressively on high-RAM hosts; cap it.
+    cpus: 2.0
+    mem_limit: 1G
+    memswap_limit: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+
+volumes:
+  mealie_data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/mealie"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

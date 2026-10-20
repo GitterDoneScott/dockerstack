@@ -1,0 +1,273 @@
+services:
+  # The Hermes Agent gateway + dashboard APIs.
+  # Gateway runs in the foreground on :8642. Dashboard runs as a background
+  # process on :9119 and is reachable only on the private Docker network.
+  hermes-agent:
+    #https://hub.docker.com/r/nousresearch/hermes-agent/tags
+    image: nousresearch/hermes-agent:stable
+    restart: unless-stopped
+    command: ["gateway", "run"]
+    env_file:
+      - .env
+    environment:
+      # Pass through whichever provider keys are set in .env. hermes-agent
+      # uses the one that matches the provider configured in
+      # ~/.hermes/config.yaml (or whatever `hermes setup` picked).
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      HERMES_UID: '10010'
+      HERMES_DASHBOARD: '1'
+      API_SERVER_KEY: ${API_SERVER_KEY:-}
+    volumes:
+      - hermes-agent-data:/opt/data
+      - dropbox-mirror:/opt/dropbox-mirror:ro
+    healthcheck:
+#      test: ['CMD-SHELL', 'curl -fsS http://localhost:8642/health && curl -fsS http://localhost:9119/api/status || exit 1']
+      test: ['CMD-SHELL', 'curl -fsSo /dev/null http://localhost:9119/ || exit 1'] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - '8642:8642'
+      - '9119:9119'
+    depends_on:
+      - openviking
+      - camofox
+      - firecrawl-api
+
+  # ── OpenViking Memory Server ────────────────────────────────────
+  openviking:
+    # https://github.com/volcengine/OpenViking/pkgs/container/openviking
+    image: ghcr.io/volcengine/openviking:v0.4.20.6
+    container_name: openviking
+    restart: unless-stopped
+    volumes:
+      - openviking-data:/app/.openviking
+    # Expose the API so host tools / Hermes outside compose can reach it
+    expose:
+      - "1933" # Optional: documents the port for internal use
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:1933/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - ollama
+
+  #docker exec -it ollama ollama pull nomic-embed-text
+  #https://github.com/ollama/ollama/releases
+  ollama:
+    image: ollama/ollama:0.34.4
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+
+  # ── Camofox Browser (stealth Firefox for agent browsing) ──────────
+  # Builds from source directly from GitHub — no manual clone needed.
+  camofox:
+    build:
+      context: https://github.com/jo-inc/camofox-browser.git#master
+      args:
+        ARCH: x86_64
+    container_name: camofox-browser
+    restart: unless-stopped
+
+    ports:
+      - "9377:9377"        # Browser control API
+      - "6080:6080"        # VNC live view (noVNC web client)
+
+    environment:
+      CAMOFOX_PORT: "9377"
+      ENABLE_VNC: "1"
+      NOVNC_PORT: "6080"
+      VNC_BIND: "0.0.0.0"
+      VNC_RESOLUTION: "1920x1080"
+      MAX_OLD_SPACE_SIZE: "2048"
+      CAMOFOX_API_KEY: "${CAMOFOX_API_KEY:-thisisaweakapikey}"
+
+    volumes:
+      - camofox-data:/root/.camofox
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ── Firecrawl: Web Scraping & Crawling API ─────────────────────
+  firecrawl-redis:
+    image: redis:alpine
+    container_name: firecrawl-redis
+    restart: unless-stopped
+    command: redis-server --bind 0.0.0.0
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+        compress: "true"
+
+  firecrawl-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: firecrawl-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${FIRECRAWL_RABBITMQ_USER:-firecrawl}
+      RABBITMQ_DEFAULT_PASS: ${FIRECRAWL_RABBITMQ_PASS:-firecrawl}
+    command: rabbitmq-server
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+        compress: "true"
+
+  firecrawl-postgres:
+    image: ghcr.io/firecrawl/nuq-postgres:latest
+    container_name: firecrawl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${FIRECRAWL_PG_USER:-firecrawl}
+      POSTGRES_PASSWORD: ${FIRECRAWL_PG_PASS:-firecrawl}
+      POSTGRES_DB: ${FIRECRAWL_PG_DB:-postgres}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+
+  firecrawl-playwright:
+    image: ghcr.io/firecrawl/playwright-service:latest
+    container_name: firecrawl-playwright
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      PROXY_SERVER: ${FIRECRAWL_PROXY_SERVER:-}
+      PROXY_USERNAME: ${FIRECRAWL_PROXY_USERNAME:-}
+      PROXY_PASSWORD: ${FIRECRAWL_PROXY_PASSWORD:-}
+      ALLOW_LOCAL_WEBHOOKS: ${FIRECRAWL_ALLOW_LOCAL_WEBHOOKS:-false}
+      BLOCK_MEDIA: ${FIRECRAWL_BLOCK_MEDIA:-false}
+      MAX_CONCURRENT_PAGES: ${FIRECRAWL_CRAWL_CONCURRENT:-10}
+    cpus: 2.0
+    mem_limit: 4G
+    memswap_limit: 4G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    tmpfs:
+      - /tmp/.cache:noexec,nosuid,size=512m
+
+  firecrawl-api:
+    image: ghcr.io/firecrawl/firecrawl:latest
+    container_name: firecrawl-api
+    restart: unless-stopped
+    depends_on:
+      firecrawl-redis:
+        condition: service_started
+      firecrawl-playwright:
+        condition: service_started
+      firecrawl-rabbitmq:
+        condition: service_healthy
+      firecrawl-postgres:
+        condition: service_started
+    environment:
+      HOST: "0.0.0.0"
+      PORT: ${FIRECRAWL_PORT:-3002}
+      EXTRACT_WORKER_PORT: ${FIRECRAWL_EXTRACT_PORT:-3004}
+      WORKER_PORT: ${FIRECRAWL_WORKER_PORT:-3005}
+      REDIS_URL: redis://firecrawl-redis:6379
+      REDIS_RATE_LIMIT_URL: redis://firecrawl-redis:6379
+      PLAYWRIGHT_MICROSERVICE_URL: http://firecrawl-playwright:3000/scrape
+      POSTGRES_HOST: firecrawl-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${FIRECRAWL_PG_DB:-postgres}
+      POSTGRES_USER: ${FIRECRAWL_PG_USER:-firecrawl}
+      POSTGRES_PASSWORD: ${FIRECRAWL_PG_PASS:-firecrawl}
+      NUQ_RABBITMQ_URL: amqp://${FIRECRAWL_RABBITMQ_USER:-firecrawl}:${FIRECRAWL_RABBITMQ_PASS:-firecrawl}@firecrawl-rabbitmq:5672
+      USE_DB_AUTHENTICATION: ${FIRECRAWL_USE_DB_AUTH:-false}
+      NUM_WORKERS_PER_QUEUE: ${FIRECRAWL_NUM_WORKERS:-8}
+      CRAWL_CONCURRENT_REQUESTS: ${FIRECRAWL_CRAWL_CONCURRENT:-10}
+      MAX_CONCURRENT_JOBS: ${FIRECRAWL_MAX_JOBS:-5}
+      BROWSER_POOL_SIZE: ${FIRECRAWL_BROWSER_POOL:-5}
+      HARNESS_STARTUP_TIMEOUT_MS: ${FIRECRAWL_HARNESS_TIMEOUT:-60000}
+      ENV: local
+      # LLM for /extract and AI features — use your existing Ollama
+      OLLAMA_BASE_URL: ${FIRECRAWL_OLLAMA_URL:-http://ollama:11434}
+      MODEL_NAME: ${FIRECRAWL_MODEL:-}
+      MODEL_EMBEDDING_NAME: ${FIRECRAWL_EMBEDDING:-nomic-embed-text}
+      # Or use OpenAI-compatible
+      OPENAI_API_KEY: ${FIRECRAWL_OPENAI_KEY:-}
+      OPENAI_BASE_URL: ${FIRECRAWL_OPENAI_BASE_URL:-}
+      # Boolean flags MUST have explicit true/false defaults (empty string crashes)
+      BLOCK_MEDIA: ${FIRECRAWL_BLOCK_MEDIA:-false}
+      ALLOW_LOCAL_WEBHOOKS: ${FIRECRAWL_ALLOW_LOCAL_WEBHOOKS:-false}
+      LOGGING_LEVEL: ${FIRECRAWL_LOG_LEVEL:-info}
+      PROXY_SERVER: ${FIRECRAWL_PROXY_SERVER:-}
+      PROXY_USERNAME: ${FIRECRAWL_PROXY_USERNAME:-}
+      PROXY_PASSWORD: ${FIRECRAWL_PROXY_PASSWORD:-}
+      SEARXNG_ENDPOINT: ${FIRECRAWL_SEARXNG:-}
+      SEARXNG_ENGINES: ${FIRECRAWL_SEARXNG_ENGINES:-}
+      SEARXNG_CATEGORIES: ${FIRECRAWL_SEARXNG_CATEGORIES:-}
+      BULL_AUTH_KEY: ${FIRECRAWL_BULL_KEY:-CHANGEME}
+      MAX_CPU: ${FIRECRAWL_MAX_CPU:-0.8}
+      MAX_RAM: ${FIRECRAWL_MAX_RAM:-0.8}
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${FIRECRAWL_PORT:-3002}:3002"
+    command: node dist/src/harness.js --start-docker
+    cpus: 4.0
+    mem_limit: 8G
+    memswap_limit: 8G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+
+volumes:
+  hermes-agent-data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/hermes-agent-data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  openviking-data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/openviking-data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  ollama-data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/ollama-data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  dropbox-mirror:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/dropbox-mirror"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  camofox-data:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/camofox-data"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+

@@ -516,13 +516,6 @@ volumes:
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
-  calibre_library:
-    driver: "local"
-    driver_opts:
-      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/books/Calibre\ Portable/Calibre\ Library"
-      type: ${VOL_TYPE:-SUBFAIL}
-      o: ${VOL_OPS:-SUBFAIL}
-
   audiobooks:
     driver: "local"
     driver_opts:
