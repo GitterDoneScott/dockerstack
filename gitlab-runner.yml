@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    restart: always
+    volumes:
+      - glrunner_config:/etc/gitlab-runner
+      - glrunner_cache:/cache
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - CI_SERVER_URL=https://gitlab.com/
+      - REGISTRATION_TOKEN=${REGISTRATION_TOKEN:-glrt-u52NtlSTCacTQrWfl1HUbG86MQpwOmlhbGV0CnQ6Mwp1OjJ2dTlnFw.01.1i07ivgel}
+      - RUNNER_NAME=${RUNNER_NAME:-my-docker-runner}
+      - RUNNER_EXECUTOR=docker
+      - DOCKER_IMAGE=${DOCKER_IMAGE:-alpine:latest}
+      - RUNNER_TAG_LIST=${RUNNER_TAG_LIST:-my-local-runner}
+      - REGISTER_NON_INTERACTIVE=true
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ ! -f /etc/gitlab-runner/config.toml ] || ! grep -q 'token' /etc/gitlab-runner/config.toml; then
+          echo "Registering runner..."
+          gitlab-runner register \
+            --non-interactive \
+            --url "$${CI_SERVER_URL}" \
+            --registration-token "$${REGISTRATION_TOKEN}" \
+            --name "$${RUNNER_NAME}" \
+            --executor "$${RUNNER_EXECUTOR}" \
+            --docker-image "$${DOCKER_IMAGE}" \
+            --tag-list "$${RUNNER_TAG_LIST}" \
+            --run-untagged="true" \
+            --locked="false" \
+            --docker-volumes "dockerstack_glrunner_cache:/cache" \
+            --docker-cache-dir "/cache"
+        else
+          echo "Runner already registered."
+        fi
+
+        exec gitlab-runner run --config /etc/gitlab-runner/config.toml
+volumes:
+  glrunner_config:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/glrunner/config"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  glrunner_cache:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX:-SUBFAIL}/containers/glrunner/cache"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}

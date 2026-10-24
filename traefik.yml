@@ -3,9 +3,18 @@ version: "3.3"
 services:
 
   traefik:
-    image: "traefik:v2.9"
+    image: "traefik:v3.7"   # pin to the current minor; digest == v3.7.16 as of 2026-10-22
     container_name: "traefik"
     restart: unless-stopped
+    # ACME/DNS-01 resolves the zone SOA through the container resolver (lego
+    # ignores dnschallenge.resolvers for this lookup), which otherwise inherits
+    # the host's dead Pi-hole 192.168.3.2. Do not point this at a Pi-hole:
+    # chugger runs pihole2 (.3) as a macvlan container its own host cannot reach.
+    dns:
+      - 192.168.3.3   # router: answers *.h.pharegrp.com and forwards upstream
+      - 192.168.3.2
+      - 1.1.1.1
+      - 8.8.8.8
     command:
       - "--providers.file.directory=/fileprovider"
       - "--providers.file.watch=true"
@@ -27,6 +36,20 @@ services:
       # - "--entrypoints.dns_udp.address=:53/udp"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.address=:80"
+      # v3 does not trust X-Forwarded-* from anyone by default (v2.9 did, unconditionally).
+      # Without this the cloudflared hop, forwardauth and the CrowdSec bouncer see the docker
+      # network address instead of the real client. Trusted: docker bridges + LAN only.
+      - "--entrypoints.websecure.forwardedheaders.trustedips=172.16.0.0/12,192.168.3.0/24"
+      - "--entrypoints.web.forwardedheaders.trustedips=172.16.0.0/12,192.168.3.0/24"
+      # v3.7.12+: required to silence the per-entrypoint startup warning, and blocks header-alias
+      # spoofing (X-Auth-User / X_Auth_User / X.Auth.User are one header to CGI/PHP/NGINX).
+      # Matters here because ForwardAuth injects X-Forwarded-User. keep|delete|reject.
+      - "--entrypoints.websecure.http.aliasheadersstrategy=delete"
+      - "--entrypoints.web.http.aliasheadersstrategy=delete"
+      # set on the non-HTTP entrypoints too, purely to stop the per-entrypoint startup warning
+      - "--entrypoints.minecraft.http.aliasheadersstrategy=delete"
+      - "--entrypoints.wireguard.http.aliasheadersstrategy=delete"
+      - "--entrypoints.openvpn_udp.http.aliasheadersstrategy=delete"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       #- "--certificatesresolvers.myresolver.acme.tlschallenge=true"
@@ -35,8 +58,12 @@ services:
       - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
       - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare"
       - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=8.8.8.8:53"
-      - "--certificatesresolvers.myresolver.acme.dnschallenge.delaybeforecheck=120"
-      - "--certificatesresolvers.myresolver.acme.dnschallenge.disablepropagationcheck=true"
+      # v3.3+ moved these under propagation.*; the old names still parse but log a deprecation.
+      # BOTH are required: lego v5's PropagationWait(wait, skipCheck) sleeps `wait` and THEN
+      # skips the check, so with disableChecks alone it notifies LE with zero propagation
+      # window -> "No TXT record found". 120s reproduces the v2.9 behaviour exactly.
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.delaybeforechecks=120"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.disablechecks=true"
 
     ports:
       - "80:80"  
@@ -75,16 +102,21 @@ services:
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.address=http://oauth:4181"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.middlewares-oauth.forwardauth.authResponseHeaders=X-Forwarded-User"
+      # v3 warns when unset: ForwardAuth otherwise reads an unbounded response body from the
+      # auth server (memory exhaustion). Docker label is case-insensitive -> maxResponseBodySize.
+      - "traefik.http.middlewares.middlewares-oauth.forwardauth.maxresponsebodysize=65536"
 
       #crowdsec middleware
       - "traefik.http.middlewares.middlewares-traefik-bouncer.forwardauth.address=http://traefik-bouncer:8080/api/v1/forwardAuth"
       - "traefik.http.middlewares.middlewares-traefik-bouncer.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.middlewares-traefik-bouncer.forwardauth.maxresponsebodysize=65536"
 
       #authelia middleware
       #- "traefik.http.routers.authelia-rtr.middlewares=chain-authelia"
       - "traefik.http.middlewares.middlewares-secured-authelia.chain.middlewares=middlewares-authelia"
       - "traefik.http.middlewares.middlewares-authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.${DNS_SUFFIX:-local}/"
       - "traefik.http.middlewares.middlewares-authelia.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.middlewares-authelia.forwardauth.maxresponsebodysize=65536"
       - "traefik.http.middlewares.middlewares-authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups"
 
     volumes:
@@ -184,7 +216,7 @@ services:
 # cloudflare free doesn't support *.*.TLD. Use <host>.TLD -> Traefik (set HTTP Host in HTTP header in tunnel setup) 
   cloudflare-tunnel:
     container_name: cloudflared-tunnel
-    image: cloudflare/cloudflared:2024.6.1
+    image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel run
     networks:

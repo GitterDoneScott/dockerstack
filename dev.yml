@@ -44,7 +44,7 @@ services:
       - "container_group=dev"
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy" #needed if there are multiple networks attached to this container
-      - "traefik.http.services.juptyer.loadbalancer.server.port=8888" #needed if multiple ports are exposed
+      - "traefik.http.services.jupyter.loadbalancer.server.port=8888" #needed if multiple ports are exposed
 
       - "traefik.http.routers.jupyter.tls=true"
       - "traefik.http.routers.jupyter.rule=Host(`jupyter.${DNS_SUFFIX:-local}`)"
