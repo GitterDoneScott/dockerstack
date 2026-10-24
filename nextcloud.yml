@@ -2,26 +2,41 @@ version: '3'
 
 services:
   nextcloud_db:
-    image: mysql:5.7
+    image: mariadb:11.8
     restart: unless-stopped
+    command:
+      - --transaction-isolation=READ-COMMITTED
+      - --binlog-format=ROW
+      - --skip-name-resolve
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      - --innodb-buffer-pool-size=1G
+      - --innodb-flush-log-at-trx-commit=2
     volumes:
-      - nextcloud_mysql:/var/lib/mysql
+      - nextcloud_mariadb:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=${NEXTCLOUD_MYSQL_ROOT_PASSWORD:-SUBFAIL}
-      - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD:-SUBFAIL}
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=${NEXTCLOUD_MYSQL_USER:-SUBFAIL}
+      - MARIADB_ROOT_PASSWORD=${NEXTCLOUD_MYSQL_ROOT_PASSWORD:-SUBFAIL}
+      - MARIADB_PASSWORD=${NEXTCLOUD_MYSQL_ROOT_PASSWORD:-SUBFAIL}
+      - MARIADB_DATABASE=nextcloud
+      - MARIADB_USER=${NEXTCLOUD_MYSQL_USER:-SUBFAIL}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - nextcloud_back
     labels:
       - "container_group=nextcloud"
 
+
   nextcloud:
-    image: nextcloud:31-apache
+    image: nextcloud:35-apache
     expose:
       - 80
     depends_on:
-      - nextcloud_db   
+      nextcloud_db:
+        condition: service_healthy  
     volumes:
       - nextcloud_config:/var/www/html/config
       - nextcloud_data:/var/www/html/data
@@ -75,6 +90,12 @@ volumes:
     driver: "local"
     driver_opts:
       device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/nextcloud/mysql"
+      type: ${VOL_TYPE:-SUBFAIL}
+      o: ${VOL_OPS:-SUBFAIL}
+  nextcloud_mariadb:
+    driver: "local"
+    driver_opts:
+      device: "${VOL_DEVICE_PREFIX_SSD:-SUBFAIL}/containers/nextcloud/mariadb"
       type: ${VOL_TYPE:-SUBFAIL}
       o: ${VOL_OPS:-SUBFAIL}
 
